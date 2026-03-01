@@ -456,6 +456,128 @@ export function Settings() {
           {store.darkMode ? '🌙 Dark' : '☀️ Light'}
         </span>
       </section>
+
+      {/* Privacy & Data */}
+      <section className="flex flex-col gap-4">
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          🔒 Privacy & Data
+        </h3>
+
+        {/* Data Storage */}
+        <div className="flex flex-col gap-1">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Data Storage</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            All your practice data is stored locally in your browser using IndexedDB and localStorage.
+            This includes: recordings, transcripts, AI feedback, practice history, settings, and API keys.
+            No data is sent to or stored on any server.
+          </p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+            ⚠️ Clearing your browser data will permanently delete all your practice history.
+          </p>
+        </div>
+
+        {/* AI Provider Data Usage */}
+        <div className="flex flex-col gap-2">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Provider Data Usage</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            When you request AI feedback, the following data is sent to your selected AI provider:
+          </p>
+
+          {/* Responsive table: cards on mobile, table on desktop */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <thead>
+                <tr className="bg-gray-100 dark:bg-gray-700">
+                  <th className="text-left px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Provider</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-700 dark:text-gray-300">Data Sent</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 dark:text-gray-400">
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">Google Gemini</td>
+                  <td className="px-3 py-2">Transcript, image (base64), WPM, prompt</td>
+                </tr>
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">Anthropic Claude</td>
+                  <td className="px-3 py-2">Transcript, image (base64), WPM, prompt</td>
+                </tr>
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">OpenAI GPT</td>
+                  <td className="px-3 py-2">Transcript, image (base64), WPM, prompt</td>
+                </tr>
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">OpenAI Whisper</td>
+                  <td className="px-3 py-2">Audio recording (for transcription)</td>
+                </tr>
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">OpenAI TTS</td>
+                  <td className="px-3 py-2">Text (for speech synthesis)</td>
+                </tr>
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">Azure Speech</td>
+                  <td className="px-3 py-2">Audio recording (for pronunciation score)</td>
+                </tr>
+                <tr className="border-t border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2 font-medium">Unsplash</td>
+                  <td className="px-3 py-2">Search queries only</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card layout */}
+          <div className="sm:hidden flex flex-col gap-2">
+            {[
+              ['Google Gemini', 'Transcript, image (base64), WPM, prompt'],
+              ['Anthropic Claude', 'Transcript, image (base64), WPM, prompt'],
+              ['OpenAI GPT', 'Transcript, image (base64), WPM, prompt'],
+              ['OpenAI Whisper', 'Audio recording (for transcription)'],
+              ['OpenAI TTS', 'Text (for speech synthesis)'],
+              ['Azure Speech', 'Audio recording (for pronunciation score)'],
+              ['Unsplash', 'Search queries only'],
+            ].map(([provider, data]) => (
+              <div key={provider} className="p-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{provider}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{data}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Privacy policies */}
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Each provider's own privacy policy applies to data sent to them:
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <a href="https://ai.google.dev/terms" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Google</a>
+            <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Anthropic</a>
+            <a href="https://openai.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">OpenAI</a>
+            <a href="https://privacy.microsoft.com" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Microsoft</a>
+          </div>
+        </div>
+
+        {/* API Keys note */}
+        <div className="flex flex-col gap-1">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">API Keys</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Your API keys are stored in localStorage and sent only to their respective provider. They are never sent anywhere else.
+          </p>
+        </div>
+
+        {/* Clear All Data */}
+        <button
+          onClick={async () => {
+            if (!confirm('This will delete ALL your data including practice history, settings, and API keys. This cannot be undone. Are you sure?')) return
+            localStorage.clear()
+            try { indexedDB.deleteDatabase('oral-practice') } catch {}
+            window.location.reload()
+          }}
+          className="self-start px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          Clear All Data
+        </button>
+      </section>
     </div>
   )
 }

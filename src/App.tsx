@@ -13,6 +13,7 @@ import { SpeakingGuide } from './components/SpeakingGuide'
 import { QuestionPrompt } from './components/QuestionPrompt'
 import { DebateFlow } from './components/DebateFlow'
 import { PassagePrompt } from './components/PassagePrompt'
+import { WelcomeModal } from './components/WelcomeModal'
 import { useAzurePronunciation } from './hooks/useAzurePronunciation'
 import { ALL_MODES, getModeById } from './modes'
 import type { PracticeModeStep } from './types/practiceMode'
@@ -92,6 +93,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
+      <WelcomeModal />
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
