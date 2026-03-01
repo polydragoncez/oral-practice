@@ -272,13 +272,22 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-gray-700 mt-8">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-center">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
           <button
             onClick={() => setTab('about')}
-            className="text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+            className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
           >
             Oral Speak Practice Feedback &middot; About & Privacy
           </button>
+          <span>&middot;</span>
+          <a
+            href="https://github.com/polydragoncez/oral-practice"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          >
+            GitHub
+          </a>
         </div>
       </footer>
     </div>
