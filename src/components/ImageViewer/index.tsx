@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../stores/settingsStore'
 import {
-  fetchRandomPhoto,
+  fetchRandomByTopic,
   searchPhotos,
   getPicsumUrl,
   urlToBase64,
@@ -10,9 +10,10 @@ import {
 } from '../../services/unsplash'
 
 export function ImageViewer() {
-  const { unsplashKey, session, setSession } = useSettingsStore(
+  const { unsplashKey, unsplashTopic, session, setSession } = useSettingsStore(
     useShallow((s) => ({
       unsplashKey: s.unsplashKey,
+      unsplashTopic: s.unsplashTopic,
       session: s.session,
       setSession: s.setSession,
     }))
@@ -47,23 +48,32 @@ export function ImageViewer() {
     [setSession]
   )
 
-  const handleRandom = useCallback(async () => {
+  const handlePicsum = useCallback(async () => {
     setLoading(true)
     setError(null)
     setShowSearch(false)
     try {
-      if (unsplashKey) {
-        const photo = await fetchRandomPhoto(unsplashKey)
-        await loadImage(photo.urls.regular)
-      } else {
-        const url = getPicsumUrl()
-        await loadImage(url)
-      }
+      const url = getPicsumUrl()
+      await loadImage(url)
     } catch {
       setError('Failed to fetch image')
       setLoading(false)
     }
-  }, [unsplashKey, loadImage])
+  }, [loadImage])
+
+  const handleUnsplash = useCallback(async () => {
+    if (!unsplashKey) return
+    setLoading(true)
+    setError(null)
+    setShowSearch(false)
+    try {
+      const photo = await fetchRandomByTopic(unsplashKey, unsplashTopic)
+      await loadImage(photo.urls.regular)
+    } catch {
+      setError('Failed to fetch image')
+      setLoading(false)
+    }
+  }, [unsplashKey, unsplashTopic, loadImage])
 
   const handleSearch = useCallback(async () => {
     if (!unsplashKey || !searchQuery.trim()) return
@@ -135,12 +145,23 @@ export function ImageViewer() {
       {/* Controls */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={handleRandom}
+          onClick={handlePicsum}
           disabled={loading}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
         >
-          {session.currentImage ? '🔀 Change' : '🎲 Random'}
+          🎲 Picsum
         </button>
+
+        {unsplashKey && (
+          <button
+            onClick={handleUnsplash}
+            disabled={loading}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+          >
+            <span>🔍 Unsplash</span>
+            <span className="text-xs bg-emerald-500/50 px-1.5 py-0.5 rounded">{unsplashTopic}</span>
+          </button>
+        )}
 
         {unsplashKey && (
           <button

@@ -13,6 +13,20 @@ export async function fetchRandomPhoto(apiKey: string): Promise<UnsplashPhoto> {
   return res.json()
 }
 
+export async function fetchRandomByTopic(apiKey: string, topic: string): Promise<UnsplashPhoto> {
+  const randomPage = Math.floor(Math.random() * 10) + 1
+  const res = await fetch(
+    `https://api.unsplash.com/search/photos?query=${encodeURIComponent(topic)}&page=${randomPage}&per_page=30&orientation=landscape&client_id=${apiKey}`
+  )
+  if (!res.ok) throw new Error(`Unsplash error: ${res.status}`)
+  const data = await res.json()
+  const results: UnsplashPhoto[] = data.results
+  if (results.length === 0) {
+    return fetchRandomPhoto(apiKey)
+  }
+  return results[Math.floor(Math.random() * results.length)]
+}
+
 export async function searchPhotos(
   apiKey: string,
   query: string

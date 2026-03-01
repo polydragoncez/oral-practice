@@ -92,6 +92,23 @@ export function Settings() {
           onChange={store.setUnsplashKey}
           placeholder="Your Unsplash access key"
         />
+        {store.unsplashKey && (
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Unsplash Image Topic
+            </label>
+            <input
+              type="text"
+              value={store.unsplashTopic}
+              onChange={(e) => store.setUnsplashTopic(e.target.value)}
+              placeholder="landscape"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Random images will be selected from this topic
+            </p>
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           <ApiKeyInput
             label="Gemini API Key"

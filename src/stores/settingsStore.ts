@@ -216,6 +216,7 @@ interface SettingsState {
   modePrompts: Record<string, string>
   thinkTime: number
   azureTtsVoice: string
+  unsplashTopic: string
 
   // Shadowing cross-mode (not persisted)
   shadowingText: string | null
@@ -248,6 +249,7 @@ interface SettingsState {
   resetModePrompt: (modeId: string) => void
   setThinkTime: (t: number) => void
   setAzureTtsVoice: (v: string) => void
+  setUnsplashTopic: (topic: string) => void
   setShadowingText: (text: string, source?: { modeId: string; version: string }) => void
   clearShadowingText: () => void
   setSession: (partial: Partial<Session>) => void
@@ -288,6 +290,7 @@ export const useSettingsStore = create<SettingsState>()(
       modePrompts: {},
       thinkTime: 5,
       azureTtsVoice: 'en-US-JennyNeural',
+      unsplashTopic: 'landscape',
       shadowingText: null,
       shadowingSource: null,
       session: defaultSession,
@@ -325,6 +328,7 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       setThinkTime: (t) => set({ thinkTime: t }),
       setAzureTtsVoice: (v) => set({ azureTtsVoice: v }),
+      setUnsplashTopic: (topic) => set({ unsplashTopic: topic }),
       setShadowingText: (text, source) =>
         set({ shadowingText: text, shadowingSource: source ?? null }),
       clearShadowingText: () =>
@@ -360,6 +364,7 @@ export const useSettingsStore = create<SettingsState>()(
         modePrompts: state.modePrompts,
         thinkTime: state.thinkTime,
         azureTtsVoice: state.azureTtsVoice,
+        unsplashTopic: state.unsplashTopic,
       }),
     }
   )
