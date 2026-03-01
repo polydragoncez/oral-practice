@@ -14,11 +14,12 @@ import { QuestionPrompt } from './components/QuestionPrompt'
 import { DebateFlow } from './components/DebateFlow'
 import { PassagePrompt } from './components/PassagePrompt'
 import { WelcomeModal } from './components/WelcomeModal'
+import { About } from './components/About'
 import { useAzurePronunciation } from './hooks/useAzurePronunciation'
 import { ALL_MODES, getModeById } from './modes'
 import type { PracticeModeStep } from './types/practiceMode'
 
-type Tab = 'practice' | 'history' | 'stats' | 'settings'
+type Tab = 'practice' | 'history' | 'stats' | 'settings' | 'about'
 
 function renderStepContent(step: PracticeModeStep): React.ReactNode {
   switch (step.type) {
@@ -262,7 +263,20 @@ export default function App() {
         {tab === 'history' && <History />}
         {tab === 'stats' && <Stats />}
         {tab === 'settings' && <Settings />}
+        {tab === 'about' && <About />}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-200 dark:border-gray-700 mt-8">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-center">
+          <button
+            onClick={() => setTab('about')}
+            className="text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+          >
+            Oral Speak Practice Feedback &middot; About & Privacy
+          </button>
+        </div>
+      </footer>
     </div>
   )
 }
