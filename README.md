@@ -6,7 +6,7 @@ An all-in-one English speaking practice web app. Look at images, answer question
 
 **[speakenglish.cc](https://speakenglish.cc/)**
 
-Try it right now — no sign-up required. You can safely enter your own API keys in Settings; they are stored only in your browser's localStorage and sent directly to the respective provider. Nothing passes through our server.
+Try it right now — no sign-up required. The site is hosted on Cloudflare Pages as a purely static site with no backend server. You can safely enter your own API keys in Settings; they are stored only in your browser's localStorage and sent directly to the respective provider. Nothing is stored on or passes through our server.
 
 ## Features
 
@@ -126,7 +126,13 @@ src/
 
 ## Contributing
 
-Contributions welcome! Please open an issue first to discuss what you'd like to change.
+Contributions welcome! Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
+
+Some ideas for contributions:
+- New practice modes or question/topic data
+- UI/UX improvements
+- Bug fixes
+- Translations / i18n support
 
 ## License
 
