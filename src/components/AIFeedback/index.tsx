@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useAIFeedback, extractScore } from '../../hooks/useAIFeedback'
 import { useTTS } from '../../hooks/useTTS'
-import { extractModelDescription, extractModelSectionLabel } from '../../utils/feedback'
+import { extractModelResponses } from '../../utils/feedback'
 import { getModeById } from '../../modes'
 
 // ─── Inline markdown renderer (bold + code only) ─────────────────────────────
@@ -101,12 +101,11 @@ function FeedbackRenderer({ markdown }: { markdown: string }) {
       continue
     }
 
-    // Skip the Model Description/Story/Answer/Argument/Summary section — rendered separately in teal card
-    if (/^\*\*(?:\d+\.\s*)?Model (?:Description|Story|Answer|Argument|Summary)\*\*/i.test(t)) {
-      // Skip this line and collect continuation lines until blank or next section
+    // Skip Model Response sections — rendered separately in cards below
+    if (/^\*\*(?:\d+\.\s*)?Model (?:Response|Description|Story|Answer|Argument|Summary)/i.test(t)) {
       while (i + 1 < lines.length) {
         const next = lines[i + 1].trim()
-        if (!next || /^\*\*\d+\./.test(next) || /^\*\*Overall Score\*\*/i.test(next)) break
+        if (!next || /^\*\*\d+\./.test(next) || /^\*\*Overall Score\*\*/i.test(next) || /^\*\*(?:\d+\.\s*)?Model Response/i.test(next)) break
         i++
       }
       continue
@@ -123,6 +122,135 @@ function FeedbackRenderer({ markdown }: { markdown: string }) {
   return <div className="flex flex-col gap-0.5">{items}</div>
 }
 
+// ─── Model Response TTS Card ─────────────────────────────────────────────────
+
+const FRAMEWORK_NAMES: Record<string, string> = {
+  'image-describe': 'DLASS',
+  'pro-con-debate': 'PEE',
+  'random-question': 'PREP',
+  'summarize': 'MKCO',
+}
+
+function ModelResponseCard({
+  type,
+  text,
+  framework,
+  speak,
+  stopTTS,
+  isPlaying,
+  speakAzure,
+  stopAzure,
+  isPlayingAzure,
+  azureAvailable,
+  voices,
+  selectedVoice,
+  setSelectedVoice,
+}: {
+  type: 'corrected' | 'reference'
+  text: string
+  framework?: string
+  speak: (text: string) => void
+  stopTTS: () => void
+  isPlaying: boolean
+  speakAzure: (text: string) => void
+  stopAzure: () => void
+  isPlayingAzure: boolean
+  azureAvailable: boolean
+  voices: { name: string; label: string }[]
+  selectedVoice: string
+  setSelectedVoice: (v: string) => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+
+  const isCorrected = type === 'corrected'
+  const bgClass = isCorrected
+    ? 'bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800'
+    : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+  const titleColor = isCorrected
+    ? 'text-teal-600 dark:text-teal-400'
+    : 'text-amber-600 dark:text-amber-400'
+  const textColor = isCorrected
+    ? 'text-teal-900 dark:text-teal-100'
+    : 'text-amber-900 dark:text-amber-100'
+  const btnClass = isCorrected
+    ? 'bg-teal-600 hover:bg-teal-700'
+    : 'bg-amber-600 hover:bg-amber-700'
+  const btnBorderClass = isCorrected
+    ? 'border-teal-300 dark:border-teal-700'
+    : 'border-amber-300 dark:border-amber-700'
+
+  const title = isCorrected ? '✏️ Corrected Version' : '⭐ Reference Version'
+  const subtitle = isCorrected
+    ? 'Your response, polished — minimal corrections applied'
+    : `Model answer following ${framework ?? 'recommended'} framework`
+
+  const handleListen = useCallback(() => {
+    if (isPlaying) { stopTTS(); return }
+    speak(text)
+  }, [isPlaying, stopTTS, speak, text])
+
+  const handleAzureListen = useCallback(() => {
+    if (isPlayingAzure) { stopAzure(); return }
+    speakAzure(text)
+  }, [isPlayingAzure, stopAzure, speakAzure, text])
+
+  return (
+    <div className={`p-4 rounded-lg border flex flex-col gap-2 ${bgClass}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <span className={`text-xs font-semibold uppercase tracking-wide ${titleColor}`}>
+            {title}
+          </span>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
+        </div>
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          {collapsed ? '▼' : '▲'}
+        </button>
+      </div>
+
+      {!collapsed && (
+        <>
+          <p className={`text-sm leading-relaxed select-text ${textColor}`}>
+            {text}
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleListen}
+              className={`flex items-center gap-1.5 px-4 py-1.5 ${btnClass} text-white rounded-lg text-sm font-medium transition-colors`}
+            >
+              {isPlaying ? '⏹️ Stop' : '🔊 Listen'}
+            </button>
+            {azureAvailable && (
+              <button
+                onClick={handleAzureListen}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border ${btnBorderClass} rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
+              >
+                {isPlayingAzure ? '⏹️ Stop' : '🎙️ Azure TTS'}
+              </button>
+            )}
+            {voices.length > 0 && (
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                className={`px-3 py-1.5 border ${btnBorderClass} rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white`}
+              >
+                {voices.map((v) => (
+                  <option key={v.name} value={v.name}>
+                    {v.label ?? v.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AIFeedback() {
@@ -134,26 +262,20 @@ export function AIFeedback() {
     }))
   )
   const { loading, error, saved, getFeedback } = useAIFeedback()
-  const { speak, stop: stopTTS, isPlaying, voices, selectedVoice, setSelectedVoice } = useTTS()
+  const {
+    speak, stop: stopTTS, isPlaying,
+    speakAzure, stopAzure, isPlayingAzure, azureAvailable,
+    voices, selectedVoice, setSelectedVoice,
+  } = useTTS()
   const [collapsed, setCollapsed] = useState(false)
 
   const currentMode = getModeById(currentModeId)
   const requiresImage = currentMode.steps.some((s) => s.type === 'display-image')
+  const framework = FRAMEWORK_NAMES[currentModeId]
 
-  const modelDescription = session.aiFeedback
-    ? extractModelDescription(session.aiFeedback)
-    : null
-  const modelSectionLabel = session.aiFeedback
-    ? extractModelSectionLabel(session.aiFeedback)
-    : 'Model Description'
-
-  const handleListen = useCallback(() => {
-    if (isPlaying) {
-      stopTTS()
-      return
-    }
-    if (modelDescription) speak(modelDescription)
-  }, [isPlaying, stopTTS, modelDescription, speak])
+  const responses = session.aiFeedback
+    ? extractModelResponses(session.aiFeedback)
+    : { corrected: null, reference: null }
 
   const score = session.aiFeedback ? extractScore(session.aiFeedback) : null
 
@@ -207,37 +329,42 @@ export function AIFeedback() {
                 <FeedbackRenderer markdown={session.aiFeedback} />
               </div>
 
-              {/* Model Description card */}
-              {modelDescription && (
-                <div className="p-4 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex flex-col gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">
-                    🎯 {modelSectionLabel} — Listen & Imitate
-                  </span>
-                  <p className="text-sm text-teal-900 dark:text-teal-100 leading-relaxed">
-                    {modelDescription}
-                  </p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={handleListen}
-                      className="flex items-center gap-1.5 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                      {isPlaying ? '⏸ Pause' : '🔊 Listen'}
-                    </button>
-                    {voices.length > 0 && (
-                      <select
-                        value={selectedVoice}
-                        onChange={(e) => setSelectedVoice(e.target.value)}
-                        className="px-3 py-1.5 border border-teal-300 dark:border-teal-700 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
-                      >
-                        {voices.map((v) => (
-                          <option key={v.name} value={v.name}>
-                            {v.label ?? v.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                </div>
+              {/* Corrected Version card */}
+              {responses.corrected && (
+                <ModelResponseCard
+                  type="corrected"
+                  text={responses.corrected}
+                  framework={framework}
+                  speak={speak}
+                  stopTTS={stopTTS}
+                  isPlaying={isPlaying}
+                  speakAzure={speakAzure}
+                  stopAzure={stopAzure}
+                  isPlayingAzure={isPlayingAzure}
+                  azureAvailable={azureAvailable}
+                  voices={voices}
+                  selectedVoice={selectedVoice}
+                  setSelectedVoice={setSelectedVoice}
+                />
+              )}
+
+              {/* Reference Version card */}
+              {responses.reference && (
+                <ModelResponseCard
+                  type="reference"
+                  text={responses.reference}
+                  framework={framework}
+                  speak={speak}
+                  stopTTS={stopTTS}
+                  isPlaying={isPlaying}
+                  speakAzure={speakAzure}
+                  stopAzure={stopAzure}
+                  isPlayingAzure={isPlayingAzure}
+                  azureAvailable={azureAvailable}
+                  voices={voices}
+                  selectedVoice={selectedVoice}
+                  setSelectedVoice={setSelectedVoice}
+                />
               )}
             </div>
           ) : (

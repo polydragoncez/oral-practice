@@ -27,12 +27,15 @@ Use this exact format:
 - ✅ [strength]
 - 💡 [one tip]
 
-**6. Model Argument**: Provide two improved versions of the student's arguments at **their own level** — fix errors and unnatural phrasing, but keep the vocabulary and sentence complexity close to what they actually used. Do NOT introduce words or grammar patterns they didn't attempt.
+**6. Model Response - Corrected Version**: An improved version of what the student actually said. Keep their original structure, ideas, and approach — only fix grammar errors, awkward phrasing, and vocabulary issues. This should feel like "what the student meant to say, but better." Keep similar length to their original.
 
-**PRO (improved):** 2–3 sentences arguing FOR the topic.
-**CON (improved):** 2–3 sentences arguing AGAINST the topic.
+**PRO (corrected):** 2–3 sentences arguing FOR.
+**CON (corrected):** 2–3 sentences arguing AGAINST.
 
-These will be read aloud for the student to imitate.
+**7. Model Response - Reference Version**: A high-quality reference answer following the PEE framework (Point, Evidence, Explain) for each side, with strong transition phrases between pro and con positions. This is the "gold standard" for the student to aspire to.
+
+**PRO (reference):** 3–4 sentences arguing FOR.
+**CON (reference):** 3–4 sentences arguing AGAINST.
 
 **Overall Score**: X/10`
 

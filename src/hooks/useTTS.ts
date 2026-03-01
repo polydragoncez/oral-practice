@@ -10,20 +10,25 @@ export interface VoiceOption {
 }
 
 export function useTTS() {
-  const { ttsEngine, openaiKey, azureSpeechKey, azureSpeechRegion } = useSettingsStore(
+  const { ttsEngine, openaiKey, azureSpeechKey, azureSpeechRegion, azureTtsVoice } = useSettingsStore(
     useShallow((s) => ({
       ttsEngine: s.ttsEngine,
       openaiKey: s.openaiKey,
       azureSpeechKey: s.azureSpeechKey,
       azureSpeechRegion: s.azureSpeechRegion,
+      azureTtsVoice: s.azureTtsVoice,
     }))
   )
 
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPlayingAzure, setIsPlayingAzure] = useState(false)
   const [browserVoices, setBrowserVoices] = useState<VoiceOption[]>([])
   const [selectedVoice, setSelectedVoice] = useState<string>('')
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const azureAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  const azureAvailable = !!(azureSpeechKey && azureSpeechRegion)
 
   // Browser voices
   useEffect(() => {
@@ -43,12 +48,12 @@ export function useTTS() {
     return () => speechSynthesis.removeEventListener('voiceschanged', loadVoices)
   }, [ttsEngine, selectedVoice])
 
-  // Set default Azure voice when switching to azure
+  // Set default Azure voice when switching to azure engine
   useEffect(() => {
     if (ttsEngine === 'azure' && !selectedVoice) {
-      setSelectedVoice(AZURE_TTS_VOICES[0].name)
+      setSelectedVoice(azureTtsVoice || AZURE_TTS_VOICES[0].name)
     }
-  }, [ttsEngine, selectedVoice])
+  }, [ttsEngine, selectedVoice, azureTtsVoice])
 
   const voices: VoiceOption[] =
     ttsEngine === 'browser' ? browserVoices
@@ -65,19 +70,27 @@ export function useTTS() {
     setIsPlaying(false)
   }, [ttsEngine])
 
-  const playBlob = useCallback(async (blobPromise: Promise<Blob>) => {
-    setIsPlaying(true)
+  const stopAzure = useCallback(() => {
+    if (azureAudioRef.current) {
+      azureAudioRef.current.pause()
+      azureAudioRef.current = null
+    }
+    setIsPlayingAzure(false)
+  }, [])
+
+  const playBlob = useCallback(async (blobPromise: Promise<Blob>, setPlaying: (v: boolean) => void, ref: React.MutableRefObject<HTMLAudioElement | null>) => {
+    setPlaying(true)
     try {
       const blob = await blobPromise
       const url = URL.createObjectURL(blob)
       const audio = new Audio(url)
-      audioRef.current = audio
-      audio.onended = () => { setIsPlaying(false); URL.revokeObjectURL(url) }
-      audio.onerror = () => { setIsPlaying(false); URL.revokeObjectURL(url) }
+      ref.current = audio
+      audio.onended = () => { setPlaying(false); URL.revokeObjectURL(url) }
+      audio.onerror = () => { setPlaying(false); URL.revokeObjectURL(url) }
       audio.play()
     } catch (err) {
       console.error('TTS error:', err)
-      setIsPlaying(false)
+      setPlaying(false)
     }
   }, [])
 
@@ -97,14 +110,29 @@ export function useTTS() {
         speechSynthesis.speak(utterance)
       } else if (ttsEngine === 'openai') {
         if (!openaiKey) { console.error('OpenAI key not set'); return }
-        await playBlob(generateTTS(openaiKey, text))
+        await playBlob(generateTTS(openaiKey, text), setIsPlaying, audioRef)
       } else if (ttsEngine === 'azure') {
         if (!azureSpeechKey) { console.error('Azure key not set'); return }
-        await playBlob(generateAzureTTS(azureSpeechKey, azureSpeechRegion, text, selectedVoice || AZURE_TTS_VOICES[0].name))
+        const voice = selectedVoice || azureTtsVoice || AZURE_TTS_VOICES[0].name
+        await playBlob(generateAzureTTS(azureSpeechKey, azureSpeechRegion, text, voice), setIsPlaying, audioRef)
       }
     },
-    [ttsEngine, openaiKey, azureSpeechKey, azureSpeechRegion, selectedVoice, stopSpeaking, playBlob]
+    [ttsEngine, openaiKey, azureSpeechKey, azureSpeechRegion, azureTtsVoice, selectedVoice, stopSpeaking, playBlob]
   )
 
-  return { speak, stop: stopSpeaking, isPlaying, voices, selectedVoice, setSelectedVoice }
+  const speakAzure = useCallback(
+    async (text: string) => {
+      stopAzure()
+      if (!azureSpeechKey) return
+      const voice = azureTtsVoice || AZURE_TTS_VOICES[0].name
+      await playBlob(generateAzureTTS(azureSpeechKey, azureSpeechRegion, text, voice), setIsPlayingAzure, azureAudioRef)
+    },
+    [azureSpeechKey, azureSpeechRegion, azureTtsVoice, stopAzure, playBlob]
+  )
+
+  return {
+    speak, stop: stopSpeaking, isPlaying,
+    speakAzure, stopAzure, isPlayingAzure, azureAvailable,
+    voices, selectedVoice, setSelectedVoice,
+  }
 }

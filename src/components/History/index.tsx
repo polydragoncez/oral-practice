@@ -4,14 +4,14 @@ import { getAllSessions, deleteSession } from '../../services/db'
 import type { SessionRecord } from '../../services/db'
 import { PronunciationScore } from '../PronunciationScore'
 import { useTTS } from '../../hooks/useTTS'
-import { extractModelDescription, extractModelSectionLabel } from '../../utils/feedback'
+import { extractModelResponses } from '../../utils/feedback'
 import { getModeById } from '../../modes'
 
 export function History() {
   const [sessions, setSessions] = useState<SessionRecord[]>([])
   const [expanded, setExpanded] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const { speak, stop: stopTTS, isPlaying, voices, selectedVoice, setSelectedVoice } = useTTS()
+  const { speak, stop: stopTTS, isPlaying } = useTTS()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -290,44 +290,51 @@ export function History() {
                   </div>
                 )}
 
-                {/* Model Description/Story/Answer/Argument with TTS */}
+                {/* Model Response cards with TTS */}
                 {s.aiFeedback && (() => {
-                  const desc = extractModelDescription(s.aiFeedback)
-                  if (!desc) return null
-                  const label = extractModelSectionLabel(s.aiFeedback)
+                  const { corrected, reference } = extractModelResponses(s.aiFeedback)
+                  if (!corrected && !reference) return null
                   return (
-                    <div className="p-4 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex flex-col gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">
-                        🎯 {label} — Listen & Imitate
-                      </span>
-                      <p className="text-sm text-teal-900 dark:text-teal-100 leading-relaxed">
-                        {desc}
-                      </p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button
-                          onClick={() => {
-                            if (isPlaying) { stopTTS(); return }
-                            speak(desc)
-                          }}
-                          className="flex items-center gap-1.5 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          {isPlaying ? '⏸ Pause' : '🔊 Listen'}
-                        </button>
-                        {voices.length > 0 && (
-                          <select
-                            value={selectedVoice}
-                            onChange={(e) => setSelectedVoice(e.target.value)}
-                            className="px-3 py-1.5 border border-teal-300 dark:border-teal-700 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+                    <>
+                      {corrected && (
+                        <div className="p-4 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 flex flex-col gap-3">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-teal-600 dark:text-teal-400">
+                            ✏️ Corrected Version
+                          </span>
+                          <p className="text-sm text-teal-900 dark:text-teal-100 leading-relaxed select-text">
+                            {corrected}
+                          </p>
+                          <button
+                            onClick={() => {
+                              if (isPlaying) { stopTTS(); return }
+                              speak(corrected)
+                            }}
+                            className="self-start flex items-center gap-1.5 px-4 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors"
                           >
-                            {voices.map((v) => (
-                              <option key={v.name} value={v.name}>
-                                {v.label ?? v.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    </div>
+                            {isPlaying ? '⏹️ Stop' : '🔊 Listen'}
+                          </button>
+                        </div>
+                      )}
+                      {reference && (
+                        <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex flex-col gap-3">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                            ⭐ Reference Version
+                          </span>
+                          <p className="text-sm text-amber-900 dark:text-amber-100 leading-relaxed select-text">
+                            {reference}
+                          </p>
+                          <button
+                            onClick={() => {
+                              if (isPlaying) { stopTTS(); return }
+                              speak(reference)
+                            }}
+                            className="self-start flex items-center gap-1.5 px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors"
+                          >
+                            {isPlaying ? '⏹️ Stop' : '🔊 Listen'}
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )
                 })()}
               </div>

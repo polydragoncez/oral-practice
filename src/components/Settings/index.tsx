@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSettingsStore, DEFAULT_SPEAKING_GUIDES } from '../../stores/settingsStore'
 import type { STTEngine, TTSEngine, AIProvider, GeminiModel } from '../../stores/settingsStore'
 import { ALL_MODES, getModeById } from '../../modes'
+import { AZURE_TTS_VOICES } from '../../services/azureSpeech'
 
 function ApiKeyInput({
   label,
@@ -135,6 +136,20 @@ export function Settings() {
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400"
           />
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Azure TTS Voice
+          </label>
+          <select
+            value={store.azureTtsVoice}
+            onChange={(e) => store.setAzureTtsVoice(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+          >
+            {AZURE_TTS_VOICES.map((v) => (
+              <option key={v.name} value={v.name}>{v.label}</option>
+            ))}
+          </select>
+        </div>
         <p className="text-xs text-gray-400 dark:text-gray-500">
           Free tier: 5 hours/month, no credit card required.{' '}
           <a
@@ -145,7 +160,8 @@ export function Settings() {
           >
             Create a Speech resource at portal.azure.com
           </a>{' '}
-          to get your key. When set, pronunciation scores appear automatically after each recording.
+          to get your key. When set, pronunciation scores appear automatically after each recording,
+          and Azure TTS buttons appear on model response cards.
         </p>
       </section>
 

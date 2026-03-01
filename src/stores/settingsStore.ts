@@ -26,7 +26,9 @@ Use this exact format:
 - ✅ [strength]
 - 💡 [one tip]
 
-**6. Model Description**: Rewrite the student's description at **their own level** — fix errors and unnatural phrasing, but keep the vocabulary and sentence complexity close to what they actually used. Do NOT introduce words or grammar patterns they didn't attempt. If they used simple sentences, output simple sentences done correctly. Only use more sophisticated language if they already demonstrated that level themselves. The goal is one small step up, not a complete rewrite. 3–5 sentences. This will be read aloud for the student to imitate.
+**6. Model Response - Corrected Version**: An improved version of what the student actually said. Keep their original structure, ideas, and approach — only fix grammar errors, awkward phrasing, and vocabulary issues. This should feel like "what the student meant to say, but better." Keep similar length to their original. 3–5 sentences.
+
+**7. Model Response - Reference Version**: A high-quality reference answer that demonstrates how a proficient English speaker would approach this task, following the DLASS framework (Describe, Locate, Action, Speculate, Share), demonstrating rich spatial vocabulary and natural speculation language. This is the "gold standard" for the student to aspire to. 4–6 sentences.
 
 **Overall Score**: X/10`
 
@@ -199,6 +201,7 @@ interface SettingsState {
   currentModeId: string
   modePrompts: Record<string, string>
   thinkTime: number
+  azureTtsVoice: string
 
   // Current session (not persisted)
   session: Session
@@ -226,6 +229,7 @@ interface SettingsState {
   setModePrompt: (modeId: string, prompt: string) => void
   resetModePrompt: (modeId: string) => void
   setThinkTime: (t: number) => void
+  setAzureTtsVoice: (v: string) => void
   setSession: (partial: Partial<Session>) => void
   resetSession: () => void
 }
@@ -263,6 +267,7 @@ export const useSettingsStore = create<SettingsState>()(
       currentModeId: 'image-describe',
       modePrompts: {},
       thinkTime: 5,
+      azureTtsVoice: 'en-US-JennyNeural',
       session: defaultSession,
 
       setUnsplashKey: (key) => set({ unsplashKey: key }),
@@ -297,13 +302,14 @@ export const useSettingsStore = create<SettingsState>()(
           return { modePrompts: rest }
         }),
       setThinkTime: (t) => set({ thinkTime: t }),
+      setAzureTtsVoice: (v) => set({ azureTtsVoice: v }),
       setSession: (partial) =>
         set((state) => ({ session: { ...state.session, ...partial } })),
       resetSession: () => set({ session: defaultSession }),
     }),
     {
       name: 'oral-practice-settings',
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown) => {
         // always reset systemPrompt to current default on version bump
         return { ...(persisted as object), systemPrompt: DEFAULT_SYSTEM_PROMPT }
@@ -327,6 +333,7 @@ export const useSettingsStore = create<SettingsState>()(
         currentModeId: state.currentModeId,
         modePrompts: state.modePrompts,
         thinkTime: state.thinkTime,
+        azureTtsVoice: state.azureTtsVoice,
       }),
     }
   )

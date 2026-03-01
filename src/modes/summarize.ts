@@ -33,7 +33,9 @@ Evaluate the student's oral summary of a passage. Use this exact format:
 - ✅ [strength]
 - 💡 [one tip]
 
-**8. Model Summary**: Provide an improved version of the student's summary at **their own level** — fix errors, improve paraphrasing, ensure all key points are covered, and keep it concise. Do NOT introduce vocabulary or grammar patterns they didn't attempt. 3–5 sentences. This will be read aloud for the student to imitate.
+**8. Model Response - Corrected Version**: An improved version of what the student actually said. Keep their original structure, ideas, and approach — only fix grammar errors, awkward phrasing, and vocabulary issues. This should feel like "what the student meant to say, but better." Keep similar length to their original. 3–5 sentences.
+
+**9. Model Response - Reference Version**: A high-quality reference summary following the MKCO framework (Main idea, Key points, Connect, Own words), demonstrating effective paraphrasing and concise reporting. This is the "gold standard" for the student to aspire to. 4–6 sentences.
 
 **Overall Score**: X/10`
 
