@@ -210,9 +210,13 @@ export function Settings() {
             onChange={(e) => store.setSttEngine(e.target.value as STTEngine)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
           >
+            <option value="auto">Auto (Web Speech + Whisper fallback)</option>
             <option value="webSpeech">Browser Web Speech API (free)</option>
             <option value="whisper">OpenAI Whisper (requires OpenAI key)</option>
           </select>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Auto mode uses free browser speech recognition, with automatic Whisper fallback if it fails (requires OpenAI key).
+          </p>
         </div>
 
         <div className="flex flex-col gap-1">

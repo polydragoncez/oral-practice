@@ -59,22 +59,25 @@ export default function App() {
 
   const handleRecordingComplete = useCallback(async () => {
     const { session, currentModeId: modeId } = useSettingsStore.getState()
-    if (session.recordingBlob && session.transcript.trim()) {
+    if (!session.recordingBlob) return
+
+    if (modeId === 'shadowing') {
       // Shadowing mode: use phoneme granularity with the reference text
-      if (modeId === 'shadowing') {
-        const refText = (session.modeState?.shadowingText as string) || session.transcript
+      const refText = (session.modeState?.shadowingText as string) || session.transcript
+      if (refText) {
         await assess(session.recordingBlob, refText, { granularity: 'Phoneme' })
-      } else {
-        await assess(session.recordingBlob, session.transcript)
       }
+    } else {
+      // Other modes: use transcript if available, unscripted if not
+      await assess(session.recordingBlob, session.transcript || undefined)
     }
   }, [assess])
 
   const handleDebateComplete = useCallback(async () => {
     const { session } = useSettingsStore.getState()
-    if (session.recordingBlob && session.transcript.trim()) {
-      await assess(session.recordingBlob, session.transcript)
-    }
+    if (!session.recordingBlob) return
+    // Use transcript if available, unscripted if not
+    await assess(session.recordingBlob, session.transcript || undefined)
   }, [assess])
 
   const currentMode = getModeById(currentModeId)

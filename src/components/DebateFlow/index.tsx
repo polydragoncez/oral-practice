@@ -49,6 +49,9 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
 
   const topicText = useCustom ? customTopic.trim() : topic.topic
 
+  // Derive whether to use Web Speech (auto mode uses it when supported)
+  const useWebSpeech = sttEngine === 'webSpeech' || (sttEngine === 'auto' && stt.isSupported)
+
   // Draw waveform
   useEffect(() => {
     const canvas = canvasRef.current
@@ -99,14 +102,14 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
 
   // Sync web speech transcript to refs during recording
   useEffect(() => {
-    if (sttEngine !== 'webSpeech') return
+    if (!useWebSpeech) return
     const combined = (stt.final + stt.interim).trim()
     if (phase === 'recording-pro' && combined) {
       proTranscriptRef.current = combined
     } else if (phase === 'recording-con' && combined) {
       conTranscriptRef.current = combined
     }
-  }, [stt.final, stt.interim, sttEngine, phase])
+  }, [stt.final, stt.interim, useWebSpeech, phase])
 
   const filteredTopics = DEBATE_TOPICS.filter(
     (t) => categoryFilter === 'all' || t.category === categoryFilter
@@ -133,6 +136,26 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
     }
   }
 
+  /** Auto-fallback: wait 2s for Web Speech, then try Whisper */
+  const autoFallbackTranscribe = async (
+    blob: Blob,
+    transcriptRef: React.MutableRefObject<string>
+  ): Promise<void> => {
+    stt.stop()
+    await new Promise((r) => setTimeout(r, 2000))
+
+    if (!transcriptRef.current.trim() && openaiKey) {
+      setTranscribing(true)
+      try {
+        transcriptRef.current = await transcribeAudio(openaiKey, blob)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Whisper transcription failed')
+      } finally {
+        setTranscribing(false)
+      }
+    }
+  }
+
   const startProRecording = async () => {
     setError(null)
     setPhase('recording-pro')
@@ -140,7 +163,7 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
     proDurationRef.current = 0
 
     try {
-      if (sttEngine === 'webSpeech' && stt.isSupported) {
+      if (useWebSpeech) {
         stt.reset()
         stt.start()
       }
@@ -148,10 +171,14 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
       const result = await recorder.start(perSideDuration)
       proDurationRef.current = result.duration
 
-      if (sttEngine === 'webSpeech') {
-        stt.stop()
-        // Give a moment for final transcript
-        await new Promise((r) => setTimeout(r, 200))
+      if (useWebSpeech) {
+        if (sttEngine === 'auto') {
+          await autoFallbackTranscribe(result.blob, proTranscriptRef)
+        } else {
+          stt.stop()
+          // Give a moment for final transcript
+          await new Promise((r) => setTimeout(r, 200))
+        }
       } else {
         proTranscriptRef.current = await handleWhisperTranscribe(result.blob)
       }
@@ -160,7 +187,7 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
       setPhase('transition')
       setTransitionCount(3)
 
-      if (sttEngine === 'webSpeech') {
+      if (useWebSpeech) {
         stt.reset()
       }
     } catch (err) {
@@ -175,7 +202,7 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
     conDurationRef.current = 0
 
     try {
-      if (sttEngine === 'webSpeech' && stt.isSupported) {
+      if (useWebSpeech) {
         stt.reset()
         stt.start()
       }
@@ -183,9 +210,13 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
       const result = await recorder.start(perSideDuration)
       conDurationRef.current = result.duration
 
-      if (sttEngine === 'webSpeech') {
-        stt.stop()
-        await new Promise((r) => setTimeout(r, 200))
+      if (useWebSpeech) {
+        if (sttEngine === 'auto') {
+          await autoFallbackTranscribe(result.blob, conTranscriptRef)
+        } else {
+          stt.stop()
+          await new Promise((r) => setTimeout(r, 200))
+        }
       } else {
         conTranscriptRef.current = await handleWhisperTranscribe(result.blob)
       }
@@ -216,7 +247,7 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
 
   const handleStopCurrent = () => {
     recorder.stop()
-    if (sttEngine === 'webSpeech') stt.stop()
+    if (useWebSpeech) stt.stop()
   }
 
   const handleReset = () => {
@@ -301,7 +332,7 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
             onClick={handleNewTopic}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
           >
-            🔀 New Topic
+            New Topic
           </button>
 
           <select
@@ -391,7 +422,7 @@ export function DebateFlow({ onRecordingComplete }: DebateFlowProps) {
         </div>
 
         {/* Live transcript */}
-        {sttEngine === 'webSpeech' && (stt.final || stt.interim) && (
+        {useWebSpeech && (stt.final || stt.interim) && (
           <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-700 dark:text-gray-300">
               {stt.final}

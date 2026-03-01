@@ -429,7 +429,7 @@ Your pitch should rise and fall naturally.
 - Flat intonation — exaggerate your pitch at first, then dial it back`,
 }
 
-export type STTEngine = 'webSpeech' | 'whisper'
+export type STTEngine = 'auto' | 'webSpeech' | 'whisper'
 export type TTSEngine = 'browser' | 'openai' | 'azure'
 export type AIProvider = 'claude' | 'openai' | 'gemini'
 export type GeminiModel = 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-2.0-flash'
@@ -537,7 +537,7 @@ export const useSettingsStore = create<SettingsState>()(
       geminiModel: 'gemini-2.5-flash',
       azureSpeechKey: '',
       azureSpeechRegion: 'eastus',
-      sttEngine: 'webSpeech',
+      sttEngine: 'auto',
       ttsEngine: 'browser',
       aiProvider: 'claude',
       defaultDuration: 60,
@@ -607,11 +607,12 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'oral-practice-settings',
-      version: 6,
+      version: 7,
       migrate: (persisted: unknown) => {
         // always reset systemPrompt to current default on version bump
         // preserve existing cheatSheets/speakingGuides custom overrides
-        return { ...(persisted as object), systemPrompt: DEFAULT_SYSTEM_PROMPT }
+        // v7: set sttEngine to 'auto' (new default with Whisper fallback)
+        return { ...(persisted as object), systemPrompt: DEFAULT_SYSTEM_PROMPT, sttEngine: 'auto' }
       },
       partialize: (state) => ({
         unsplashKey: state.unsplashKey,

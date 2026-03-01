@@ -1,6 +1,7 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { transcribeAudio } from '../../services/whisper'
 
 function computeWpm(transcript: string, durationSecs: number): number | null {
   if (!transcript.trim() || durationSecs <= 0) return null
@@ -39,9 +40,12 @@ function WpmBadge({ wpm }: { wpm: number }) {
 }
 
 export function Transcript() {
-  const { session, setSession } = useSettingsStore(
-    useShallow((s) => ({ session: s.session, setSession: s.setSession }))
+  const { session, setSession, openaiKey } = useSettingsStore(
+    useShallow((s) => ({ session: s.session, setSession: s.setSession, openaiKey: s.openaiKey }))
   )
+
+  const [whisperTranscribing, setWhisperTranscribing] = useState(false)
+  const [whisperError, setWhisperError] = useState<string | null>(null)
 
   const wpm = computeWpm(session.transcript, session.duration)
 
@@ -51,17 +55,50 @@ export function Transcript() {
     }
   }, [session.transcript])
 
+  const handleManualWhisper = useCallback(async () => {
+    if (!session.recordingBlob || !openaiKey) return
+    setWhisperTranscribing(true)
+    setWhisperError(null)
+    try {
+      const text = await transcribeAudio(openaiKey, session.recordingBlob)
+      setSession({ transcript: text })
+    } catch (err) {
+      setWhisperError(err instanceof Error ? err.message : 'Whisper transcription failed')
+    } finally {
+      setWhisperTranscribing(false)
+    }
+  }, [session.recordingBlob, openaiKey, setSession])
+
+  const showManualWhisper = !session.transcript && session.recordingBlob && openaiKey
+  const showEmptyHint = !session.transcript && session.recordingBlob && !openaiKey
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2 flex-wrap">
         {wpm !== null && <WpmBadge wpm={wpm} />}
         <div className="flex-1" />
+        {showManualWhisper && (
+          <button
+            onClick={handleManualWhisper}
+            disabled={whisperTranscribing}
+            className="text-xs px-2 py-1 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300 rounded transition-colors disabled:opacity-50 flex items-center gap-1"
+          >
+            {whisperTranscribing ? (
+              <>
+                <span className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin inline-block" />
+                Transcribing…
+              </>
+            ) : (
+              'Transcribe with Whisper'
+            )}
+          </button>
+        )}
         {session.transcript && (
           <button
             onClick={handleCopy}
             className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors"
           >
-            📋 Copy
+            Copy
           </button>
         )}
       </div>
@@ -73,13 +110,30 @@ export function Transcript() {
           className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none min-h-[100px] outline-none focus:ring-2 focus:ring-indigo-400"
           placeholder="Your transcript will appear here…"
         />
+      ) : session.recordingBlob ? (
+        <textarea
+          value=""
+          onChange={(e) => setSession({ transcript: e.target.value })}
+          className="w-full p-3 rounded-lg border border-dashed border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 text-gray-900 dark:text-white text-sm resize-none min-h-[100px] outline-none focus:ring-2 focus:ring-amber-400"
+          placeholder="Speech recognition returned empty — type your transcript here..."
+        />
       ) : (
         <div className="p-3 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-sm min-h-[80px] flex items-center">
           Record yourself speaking to see the transcript here
         </div>
       )}
 
-      {!session.transcript && (
+      {whisperError && (
+        <p className="text-xs text-red-500 dark:text-red-400">{whisperError}</p>
+      )}
+
+      {showEmptyHint && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Add an OpenAI key in Settings to enable Whisper transcription as a fallback.
+        </p>
+      )}
+
+      {!session.transcript && !session.recordingBlob && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
           Reference: Beginner 80–100 · Intermediate 120–150 · Native-like 150–180 WPM
         </p>

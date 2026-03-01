@@ -84,7 +84,7 @@ export async function assessPronunciation(
   azureKey: string,
   azureRegion: string,
   audioBlob: Blob,
-  referenceText: string,
+  referenceText?: string,
   options?: { granularity?: 'Word' | 'Phoneme' }
 ): Promise<PronunciationResult> {
   // Convert to WAV PCM 16kHz mono (required by Azure REST API)
@@ -93,14 +93,24 @@ export async function assessPronunciation(
   const granularity = options?.granularity ?? 'Word'
 
   // Build Pronunciation Assessment config
-  const assessmentConfig = {
-    ReferenceText: referenceText,
-    GradingSystem: 'HundredMark',
-    Granularity: granularity,
-    Dimension: 'Comprehensive',
-    EnableMiscue: true,
-    EnableProsodyAssessment: true,
-  }
+  // When referenceText is provided: scripted mode with miscue detection
+  // When omitted: unscripted mode with general topic
+  const assessmentConfig = referenceText
+    ? {
+        ReferenceText: referenceText,
+        GradingSystem: 'HundredMark',
+        Granularity: granularity,
+        Dimension: 'Comprehensive',
+        EnableMiscue: true,
+        EnableProsodyAssessment: true,
+      }
+    : {
+        Topic: 'General',
+        GradingSystem: 'HundredMark',
+        Granularity: granularity,
+        Dimension: 'Comprehensive',
+        EnableProsodyAssessment: true,
+      }
   const configBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(assessmentConfig))))
 
   const endpoint =

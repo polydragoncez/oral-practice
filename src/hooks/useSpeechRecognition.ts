@@ -6,6 +6,7 @@ type AnySpeechRecognition = any
 export function useSpeechRecognition() {
   const [interim, setInterim] = useState('')
   const [final, setFinal] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const recognitionRef = useRef<AnySpeechRecognition>(null)
   const isActiveRef = useRef(false)
 
@@ -56,11 +57,13 @@ export function useSpeechRecognition() {
     recognition.onerror = (e: AnySpeechRecognition) => {
       if (e.error === 'no-speech') return
       console.warn('Speech recognition error:', e.error)
+      setError(e.error)
     }
 
     isActiveRef.current = true
     setFinal('')
     setInterim('')
+    setError(null)
     try {
       recognition.start()
     } catch {
@@ -83,7 +86,8 @@ export function useSpeechRecognition() {
   const reset = useCallback(() => {
     setFinal('')
     setInterim('')
+    setError(null)
   }, [])
 
-  return { interim, final, start, stop, reset, isSupported }
+  return { interim, final, start, stop, reset, isSupported, error }
 }

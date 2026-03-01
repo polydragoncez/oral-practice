@@ -30,11 +30,15 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
   }, [setDefaultDuration])
   const [transcribing, setTranscribing] = useState(false)
   const [micError, setMicError] = useState<string | null>(null)
+  const [sttStatus, setSttStatus] = useState<string | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { isRecording, timeLeft, analyserData, start, stop } = useRecorder()
   const { interim, final, start: startSTT, stop: stopSTT, reset: resetSTT, isSupported } =
     useSpeechRecognition()
+
+  // Derive whether to use Web Speech (auto mode uses it when supported)
+  const useWebSpeech = sttEngine === 'webSpeech' || (sttEngine === 'auto' && isSupported)
 
   // Draw waveform
   useEffect(() => {
@@ -76,16 +80,17 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
   const handleToggle = useCallback(async () => {
     if (isRecording) {
       stop()
-      if (sttEngine === 'webSpeech') stopSTT()
+      if (useWebSpeech) stopSTT()
     } else {
       setMicError(null)
+      setSttStatus(null)
       resetSTT()
       setSession({ transcript: '', aiFeedback: '', recordingBlob: null, pronunciationResult: null })
 
       try {
         const recordPromise = start(duration)
 
-        if (sttEngine === 'webSpeech' && isSupported) {
+        if (useWebSpeech) {
           startSTT()
         }
 
@@ -93,6 +98,7 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
         setSession({ recordingBlob: result.blob, duration: result.duration })
 
         if (sttEngine === 'whisper') {
+          // Whisper-only mode
           if (!openaiKey) {
             setMicError('OpenAI key required for Whisper STT')
             return
@@ -106,8 +112,35 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
           } finally {
             setTranscribing(false)
           }
+        } else if (sttEngine === 'auto' && useWebSpeech) {
+          // Auto mode: wait 2s for Web Speech, fallback to Whisper
+          stopSTT()
+          await new Promise((r) => setTimeout(r, 2000))
+
+          const currentTranscript = useSettingsStore.getState().session.transcript
+          if (!currentTranscript.trim()) {
+            // Web Speech produced nothing — try Whisper fallback
+            if (openaiKey) {
+              setSttStatus('Transcribing with Whisper...')
+              setTranscribing(true)
+              try {
+                const text = await transcribeAudio(openaiKey, result.blob)
+                setSession({ transcript: text })
+                setSttStatus(null)
+              } catch (err) {
+                setMicError(err instanceof Error ? err.message : 'Whisper transcription failed')
+                setSttStatus(null)
+              } finally {
+                setTranscribing(false)
+              }
+            } else {
+              setSttStatus('Browser speech recognition returned empty — add an OpenAI key in Settings for Whisper fallback, or type your transcript below')
+            }
+          } else {
+            setSttStatus(null)
+          }
         } else {
-          // Web Speech: final transcript already accumulated
+          // webSpeech-only mode: final transcript already accumulated
         }
 
         onRecordingComplete?.()
@@ -125,7 +158,7 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
     start,
     duration,
     sttEngine,
-    isSupported,
+    useWebSpeech,
     startSTT,
     stopSTT,
     resetSTT,
@@ -136,18 +169,18 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
 
   // Sync web speech transcript to session
   useEffect(() => {
-    if (sttEngine === 'webSpeech') {
+    if (useWebSpeech) {
       const combined = (final + interim).trim()
       if (combined) setSession({ transcript: combined })
     }
-  }, [final, interim, sttEngine, setSession])
+  }, [final, interim, useWebSpeech, setSession])
 
   // Stop STT when recording stops
   useEffect(() => {
-    if (!isRecording && sttEngine === 'webSpeech') {
+    if (!isRecording && useWebSpeech) {
       stopSTT()
     }
-  }, [isRecording, sttEngine, stopSTT])
+  }, [isRecording, useWebSpeech, stopSTT])
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60)
@@ -215,6 +248,10 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
           </div>
         )}
       </div>
+
+      {sttStatus && (
+        <p className="text-sm text-amber-600 dark:text-amber-400">{sttStatus}</p>
+      )}
 
       {micError && (
         <p className="text-sm text-red-500 dark:text-red-400">{micError}</p>
