@@ -20,7 +20,14 @@ export function Recorder({ onRecordingComplete }: RecorderProps) {
     }))
   )
 
-  const [duration, setDuration] = useState(defaultDuration)
+  const setDefaultDuration = useSettingsStore((s) => s.setDefaultDuration)
+  const [duration, setDurationLocal] = useState(defaultDuration)
+
+  // Sync slider to store so it persists across mode switches
+  const setDuration = useCallback((d: number) => {
+    setDurationLocal(d)
+    setDefaultDuration(d)
+  }, [setDefaultDuration])
   const [transcribing, setTranscribing] = useState(false)
   const [micError, setMicError] = useState<string | null>(null)
 

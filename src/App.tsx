@@ -47,7 +47,8 @@ export default function App() {
       setCurrentModeId: s.setCurrentModeId,
     }))
   )
-  const { assess, result: pronunciationResult, isAssessing, error: pronunciationError, azureAvailable } = useAzurePronunciation()
+  const { assess, reset: resetPronunciation, result: pronunciationResult, isAssessing, error: pronunciationError, azureAvailable } = useAzurePronunciation()
+  const resetSession = useSettingsStore((s) => s.resetSession)
 
   const [tab, setTab] = useState<Tab>('practice')
   const [transcriptOpen, setTranscriptOpen] = useState(true)
@@ -83,11 +84,13 @@ export default function App() {
   const hasPassageStep = currentMode.steps.some((s) => s.type === 'display-passage')
   const hasShadowingStep = currentMode.steps.some((s) => s.type === 'display-shadowing-text')
 
-  // Reset state when mode changes
+  // Reset all session state when mode changes
   useEffect(() => {
+    resetSession()
+    resetPronunciation()
     setSummarizeReady(false)
     setShadowingReady(false)
-  }, [currentModeId])
+  }, [currentModeId, resetSession, resetPronunciation])
 
   // Apply dark mode class on <html>
   useEffect(() => {
