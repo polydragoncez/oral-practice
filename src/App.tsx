@@ -151,15 +151,15 @@ export default function App() {
                     <button
                       key={mode.id}
                       onClick={() => setCurrentModeId(mode.id)}
-                      title={mode.description}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      title={`${mode.name}: ${mode.description}`}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                         currentModeId === mode.id
                           ? 'bg-indigo-600 border-indigo-600 text-white'
                           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-indigo-400'
                       }`}
                     >
                       <span>{mode.icon}</span>
-                      <span>{mode.name}</span>
+                      <span className="hidden sm:inline text-xs">{mode.name}</span>
                     </button>
                   ))}
                 </div>

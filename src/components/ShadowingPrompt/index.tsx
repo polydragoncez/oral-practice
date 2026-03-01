@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { getModeById } from '../../modes'
 
-const MAX_CHARS = 200
+const MAX_CHARS = 500
 
 export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
   const {
