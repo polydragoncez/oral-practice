@@ -183,6 +183,7 @@ function ModelResponseCard({
   const subtitle = isCorrected
     ? 'Your response, polished — minimal corrections applied'
     : `Model answer following ${framework ?? 'recommended'} framework`
+  const wordCount = text.trim().split(/\s+/).length
 
   const handleListen = useCallback(() => {
     if (isPlaying) { stopTTS(); return }
@@ -198,9 +199,14 @@ function ModelResponseCard({
     <div className={`p-4 rounded-lg border flex flex-col gap-2 ${bgClass}`}>
       <div className="flex items-center justify-between">
         <div>
-          <span className={`text-xs font-semibold uppercase tracking-wide ${titleColor}`}>
-            {title}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-semibold uppercase tracking-wide ${titleColor}`}>
+              {title}
+            </span>
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-200/60 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400 font-medium">
+              {wordCount} words
+            </span>
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
         </div>
         <button
