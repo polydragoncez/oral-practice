@@ -5,6 +5,7 @@ import { useAIFeedback, extractScore } from '../../hooks/useAIFeedback'
 import { useTTS } from '../../hooks/useTTS'
 import { extractModelResponses } from '../../utils/feedback'
 import { getModeById } from '../../modes'
+import { AZURE_TTS_VOICES } from '../../services/azureSpeech'
 
 // ─── Inline markdown renderer (bold + code only) ─────────────────────────────
 
@@ -143,9 +144,8 @@ function ModelResponseCard({
   stopAzure,
   isPlayingAzure,
   azureAvailable,
-  voices,
-  selectedVoice,
-  setSelectedVoice,
+  azureTtsVoice,
+  setAzureTtsVoice,
   onShadowing,
 }: {
   type: 'corrected' | 'reference'
@@ -159,9 +159,8 @@ function ModelResponseCard({
   stopAzure: () => void
   isPlayingAzure: boolean
   azureAvailable: boolean
-  voices: { name: string; label: string }[]
-  selectedVoice: string
-  setSelectedVoice: (v: string) => void
+  azureTtsVoice: string
+  setAzureTtsVoice: (v: string) => void
   onShadowing?: () => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -235,25 +234,25 @@ function ModelResponseCard({
               {isPlaying ? '⏹️ Stop' : '🔊 Listen'}
             </button>
             {azureAvailable && (
-              <button
-                onClick={handleAzureListen}
-                className={`flex items-center gap-1.5 px-3 py-1.5 border ${btnBorderClass} rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
-              >
-                {isPlayingAzure ? '⏹️ Stop' : '🎙️ Azure TTS'}
-              </button>
-            )}
-            {voices.length > 0 && (
-              <select
-                value={selectedVoice}
-                onChange={(e) => setSelectedVoice(e.target.value)}
-                className={`px-3 py-1.5 border ${btnBorderClass} rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white`}
-              >
-                {voices.map((v) => (
-                  <option key={v.name} value={v.name}>
-                    {v.label ?? v.name}
-                  </option>
-                ))}
-              </select>
+              <>
+                <button
+                  onClick={handleAzureListen}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border ${btnBorderClass} rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
+                >
+                  {isPlayingAzure ? '⏹️ Stop' : '🎙️ Azure TTS'}
+                </button>
+                <select
+                  value={azureTtsVoice}
+                  onChange={(e) => setAzureTtsVoice(e.target.value)}
+                  className={`px-3 py-1.5 border ${btnBorderClass} rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white`}
+                >
+                  {AZURE_TTS_VOICES.map((v) => (
+                    <option key={v.name} value={v.name}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </>
             )}
             {onShadowing && (
               <button
@@ -273,20 +272,21 @@ function ModelResponseCard({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AIFeedback({ onNavigateToShadowing }: { onNavigateToShadowing?: () => void } = {}) {
-  const { session, aiProvider, currentModeId, setShadowingText, setCurrentModeId } = useSettingsStore(
+  const { session, aiProvider, currentModeId, setShadowingText, setCurrentModeId, azureTtsVoice, setAzureTtsVoice } = useSettingsStore(
     useShallow((s) => ({
       session: s.session,
       aiProvider: s.aiProvider,
       currentModeId: s.currentModeId,
       setShadowingText: s.setShadowingText,
       setCurrentModeId: s.setCurrentModeId,
+      azureTtsVoice: s.azureTtsVoice,
+      setAzureTtsVoice: s.setAzureTtsVoice,
     }))
   )
   const { loading, error, saved, getFeedback } = useAIFeedback()
   const {
     speak, stop: stopTTS, isPlaying,
     speakAzure, stopAzure, isPlayingAzure, azureAvailable,
-    voices, selectedVoice, setSelectedVoice,
   } = useTTS()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -371,9 +371,8 @@ export function AIFeedback({ onNavigateToShadowing }: { onNavigateToShadowing?: 
                   stopAzure={stopAzure}
                   isPlayingAzure={isPlayingAzure}
                   azureAvailable={azureAvailable}
-                  voices={voices}
-                  selectedVoice={selectedVoice}
-                  setSelectedVoice={setSelectedVoice}
+                  azureTtsVoice={azureTtsVoice}
+                  setAzureTtsVoice={setAzureTtsVoice}
                   onShadowing={!isShadowing ? () => handleShadowing(responses.corrected!, 'corrected') : undefined}
                 />
               )}
@@ -392,9 +391,8 @@ export function AIFeedback({ onNavigateToShadowing }: { onNavigateToShadowing?: 
                   stopAzure={stopAzure}
                   isPlayingAzure={isPlayingAzure}
                   azureAvailable={azureAvailable}
-                  voices={voices}
-                  selectedVoice={selectedVoice}
-                  setSelectedVoice={setSelectedVoice}
+                  azureTtsVoice={azureTtsVoice}
+                  setAzureTtsVoice={setAzureTtsVoice}
                   onShadowing={!isShadowing ? () => handleShadowing(responses.reference!, 'reference') : undefined}
                 />
               )}

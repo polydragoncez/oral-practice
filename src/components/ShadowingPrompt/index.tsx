@@ -1,22 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { useTTS } from '../../hooks/useTTS'
 import { getModeById } from '../../modes'
+import { AZURE_TTS_VOICES } from '../../services/azureSpeech'
 
-const MAX_CHARS = 500
+const MAX_WORDS = 200
 
 export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
   const {
     shadowingText, shadowingSource, clearShadowingText,
-    setSession,
+    setSession, azureTtsVoice, setAzureTtsVoice,
   } = useSettingsStore(
     useShallow((s) => ({
       shadowingText: s.shadowingText,
       shadowingSource: s.shadowingSource,
       clearShadowingText: s.clearShadowingText,
       setSession: s.setSession,
+      azureTtsVoice: s.azureTtsVoice,
+      setAzureTtsVoice: s.setAzureTtsVoice,
     }))
   )
+
+  const {
+    speakAzure, stopAzure, isPlayingAzure, azureAvailable,
+  } = useTTS()
 
   const [text, setText] = useState('')
   const [speed, setSpeed] = useState(1.0)
@@ -24,10 +32,13 @@ export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const initializedRef = useRef(false)
 
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+
   // Pre-fill from cross-mode shadowing text
   useEffect(() => {
     if (shadowingText && !initializedRef.current) {
-      setText(shadowingText.slice(0, MAX_CHARS))
+      const words = shadowingText.trim().split(/\s+/)
+      setText(words.length > MAX_WORDS ? words.slice(0, MAX_WORDS).join(' ') : shadowingText)
       initializedRef.current = true
     }
   }, [shadowingText])
@@ -38,12 +49,13 @@ export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
   }, [text, setSession])
 
   const handleTextChange = useCallback((val: string) => {
-    if (val.length <= MAX_CHARS) {
+    const words = val.trim().split(/\s+/)
+    if (!val.trim() || words.length <= MAX_WORDS) {
       setText(val)
     }
   }, [])
 
-  const handleListen = useCallback(() => {
+  const handleBrowserListen = useCallback(() => {
     if (isSpeaking) {
       speechSynthesis.cancel()
       setIsSpeaking(false)
@@ -60,12 +72,17 @@ export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
     speechSynthesis.speak(utterance)
   }, [isSpeaking, text, speed])
 
+  const handleAzureListen = useCallback(() => {
+    if (isPlayingAzure) { stopAzure(); return }
+    if (!text.trim()) return
+    speakAzure(text)
+  }, [isPlayingAzure, stopAzure, speakAzure, text])
+
   const handleReady = useCallback(() => {
     if (!text.trim()) return
     setReady(true)
-    // Calculate suggested duration: ~wordCount/2 seconds, min 5, max 60
-    const wordCount = text.trim().split(/\s+/).length
-    const suggestedDuration = Math.max(5, Math.min(60, Math.round(wordCount / 2) + 3))
+    const wc = text.trim().split(/\s+/).length
+    const suggestedDuration = Math.max(5, Math.min(60, Math.round(wc / 2) + 3))
     setSession({ modeState: { shadowingText: text, suggestedDuration } })
     onReady()
   }, [text, setSession, onReady])
@@ -113,14 +130,10 @@ export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
               onChange={(e) => handleTextChange(e.target.value)}
               placeholder="Paste or type the text you want to read aloud..."
               className="w-full h-28 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm text-gray-800 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              maxLength={MAX_CHARS}
             />
-            <div className="flex items-center justify-between">
-              <span className={`text-xs ${text.length >= MAX_CHARS ? 'text-red-500' : 'text-gray-400'}`}>
-                {text.length}/{MAX_CHARS}
-              </span>
-              <span className="text-xs text-gray-400">
-                {text.trim() ? `${text.trim().split(/\s+/).length} words` : ''}
+            <div className="flex items-center justify-end">
+              <span className={`text-xs ${wordCount >= MAX_WORDS ? 'text-red-500' : 'text-gray-400'}`}>
+                {wordCount}/{MAX_WORDS} words
               </span>
             </div>
           </div>
@@ -128,13 +141,34 @@ export function ShadowingPrompt({ onReady }: { onReady: () => void }) {
           {/* TTS controls */}
           {text.trim() && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={handleListen}
+                  onClick={handleBrowserListen}
                   className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                   {isSpeaking ? '⏹️ Stop' : '🔊 Listen First'}
                 </button>
+                {azureAvailable && (
+                  <>
+                    <button
+                      onClick={handleAzureListen}
+                      className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      {isPlayingAzure ? '⏹️ Stop' : '🎙️ Azure TTS'}
+                    </button>
+                    <select
+                      value={azureTtsVoice}
+                      onChange={(e) => setAzureTtsVoice(e.target.value)}
+                      className="px-2 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+                    >
+                      {AZURE_TTS_VOICES.map((v) => (
+                        <option key={v.name} value={v.name}>
+                          {v.label}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-gray-500 dark:text-gray-400">Speed:</label>
                   <input
