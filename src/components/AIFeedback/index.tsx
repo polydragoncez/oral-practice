@@ -135,6 +135,7 @@ function ModelResponseCard({
   type,
   text,
   framework,
+  duration,
   speak,
   stopTTS,
   isPlaying,
@@ -149,6 +150,7 @@ function ModelResponseCard({
   type: 'corrected' | 'reference'
   text: string
   framework?: string
+  duration: number
   speak: (text: string) => void
   stopTTS: () => void
   isPlaying: boolean
@@ -184,6 +186,7 @@ function ModelResponseCard({
     ? 'Your response, polished — minimal corrections applied'
     : `Model answer following ${framework ?? 'recommended'} framework`
   const wordCount = text.trim().split(/\s+/).length
+  const wpm = duration > 0 ? Math.round((wordCount / duration) * 60) : null
 
   const handleListen = useCallback(() => {
     if (isPlaying) { stopTTS(); return }
@@ -204,7 +207,7 @@ function ModelResponseCard({
               {title}
             </span>
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-200/60 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400 font-medium">
-              {wordCount} words
+              {wordCount} words{wpm ? ` · ${wpm} WPM` : ''}
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
@@ -341,6 +344,7 @@ export function AIFeedback() {
                   type="corrected"
                   text={responses.corrected}
                   framework={framework}
+                  duration={session.duration}
                   speak={speak}
                   stopTTS={stopTTS}
                   isPlaying={isPlaying}
@@ -360,6 +364,7 @@ export function AIFeedback() {
                   type="reference"
                   text={responses.reference}
                   framework={framework}
+                  duration={session.duration}
                   speak={speak}
                   stopTTS={stopTTS}
                   isPlaying={isPlaying}
