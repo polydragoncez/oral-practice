@@ -118,6 +118,19 @@ export function Settings() {
         <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           Azure Speech (Pronunciation Assessment + TTS)
         </h3>
+        {!store.azureSpeechKey && (
+          <div className="flex gap-3 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30">
+            <span className="text-lg shrink-0">⭐</span>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                Highly Recommended
+              </p>
+              <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                Add an Azure Speech key to unlock pronunciation scoring after every recording, word-by-word accuracy analysis, phoneme-level feedback in Read Aloud mode, and high-quality Azure Neural TTS voices. Free tier: 5 hours/month, no credit card needed.
+              </p>
+            </div>
+          </div>
+        )}
         <ApiKeyInput
           label="Azure Speech Key"
           value={store.azureSpeechKey}
