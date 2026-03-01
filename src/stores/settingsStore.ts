@@ -36,9 +36,13 @@ const DEFAULT_CHEAT_SHEETS: Record<string, string> = {
   'image-describe': `🎯 **DLASS Framework**
 
 **D** — Describe: What do you see?
+
 **L** — Location: Where are things?
+
 **A** — Action: What's happening?
+
 **S** — Speculate: Why or what might happen?
+
 **S** — Share: Your personal reaction
 
 ⏱ 60-90 sec | 🎯 Use present continuous for actions`,
@@ -46,10 +50,13 @@ const DEFAULT_CHEAT_SHEETS: Record<string, string> = {
   'pro-con-debate': `🎯 **PEE Framework**
 
 **P** — Point: State your position clearly
+
 **E** — Evidence: Give a fact, example, or statistic
+
 **E** — Explain: Why does this evidence matter?
 
 📌 Stage 1: Argue FOR (30-60 sec)
+
 📌 Stage 2: Argue AGAINST (30-60 sec)
 
 💡 Signal words: "Furthermore..." / "However..." / "This matters because..."`,
@@ -57,8 +64,11 @@ const DEFAULT_CHEAT_SHEETS: Record<string, string> = {
   'random-question': `🎯 **PREP Framework**
 
 **P** — Point: Answer the question directly
+
 **R** — Reason: Explain why
+
 **E** — Example: Give a specific example
+
 **P** — Point: Restate to wrap up
 
 ⏱ 45-90 sec | 💡 Start with "I believe..." or "In my opinion..."`,
@@ -66,8 +76,11 @@ const DEFAULT_CHEAT_SHEETS: Record<string, string> = {
   'summarize': `🎯 **MKCO Framework**
 
 **M** — Main idea: What's the passage about in one sentence?
+
 **K** — Key points: 2-3 most important details
+
 **C** — Connect: How do the ideas relate?
+
 **O** — Own words: Rephrase, don't repeat
 
 ⏱ 30-60 sec | 💡 Start with "This passage discusses..." | 🚫 Don't add opinions`,
@@ -75,9 +88,13 @@ const DEFAULT_CHEAT_SHEETS: Record<string, string> = {
   'shadowing': `🎯 **Read Aloud Tips**
 
 👂 Listen first, at least once
+
 🐢 Clarity over speed
+
 🔗 Link words naturally: "an apple" → "a·napple"
+
 📈 Stress content words (nouns, verbs, adjectives)
+
 ⏸️ Pause at punctuation
 
 🎯 Key sounds: th /θ/, r /ɹ/, v /v/, l vs r`,

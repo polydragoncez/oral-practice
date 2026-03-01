@@ -24,6 +24,7 @@ Try it right now — no sign-up required. The site is hosted on Cloudflare Pages
 - 🔊 **Model Answers** — AI generates improved versions and reads them aloud via TTS (Browser, Azure Neural, or OpenAI)
 - 🎯 **Pronunciation Assessment** — Azure Speech integration for prosody, rhythm, stress, and per-word accuracy scoring
 - 🗣️ **Cross-Mode Practice** — Jump from any AI feedback directly to Read Aloud mode to practice corrected sentences
+- 📋 **Dual Reference Panel** — Each mode has a concise Cheat Sheet (quick-reference) and a detailed Speaking Guide (full examples, do/don't comparisons), both customizable per-mode in Settings
 - 📅 **Practice History** — All sessions saved locally with full playback and mode-specific metadata
 - 📈 **Stats Dashboard** — Track daily streaks, total practice time, and sessions per mode
 - 📱 **PWA** — Install as an app on mobile or desktop
@@ -113,7 +114,7 @@ src/
 │   ├── Recorder/           # Recording with waveform
 │   ├── Transcript/         # Speech-to-text display
 │   ├── AIFeedback/         # AI response + Model Answer TTS
-│   ├── SpeakingGuide/      # Per-mode speaking framework guides
+│   ├── SpeakingGuide/      # Dual-tab Cheat Sheet + Speaking Guide panel
 │   ├── DebateFlow/         # Pro/Con debate lifecycle
 │   ├── QuestionPrompt/     # Random question display + filters
 │   ├── PassagePrompt/      # Summarize passage display
@@ -126,7 +127,7 @@ src/
 │   ├── About/              # About & Privacy page
 │   ├── History/            # Past sessions with mode badges
 │   ├── Stats/              # Practice statistics & streaks
-│   └── Settings/           # API keys, engines, prompts, privacy
+│   └── Settings/           # API keys, engines, prompts, cheat sheets, guides
 ├── modes/                  # Practice mode definitions
 │   ├── imageDescribe.ts
 │   ├── proConDebate.ts
