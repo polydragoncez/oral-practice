@@ -439,6 +439,7 @@ interface Session {
   currentImageBase64: string | null  // always base64 for AI
   currentImageMimeType: string
   transcript: string
+  transcriptSource: 'stt' | 'azure' | null
   aiFeedback: string
   recordingBlob: Blob | null
   duration: number
@@ -520,6 +521,7 @@ const defaultSession: Session = {
   currentImageBase64: null,
   currentImageMimeType: 'image/jpeg',
   transcript: '',
+  transcriptSource: null,
   aiFeedback: '',
   recordingBlob: null,
   duration: 0,

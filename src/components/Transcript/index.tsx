@@ -103,10 +103,16 @@ export function Transcript() {
         )}
       </div>
 
+      {session.transcriptSource === 'azure' && session.transcript && (
+        <p className="text-xs text-blue-600 dark:text-blue-400">
+          Transcript extracted from pronunciation assessment
+        </p>
+      )}
+
       {session.transcript ? (
         <textarea
           value={session.transcript}
-          onChange={(e) => setSession({ transcript: e.target.value })}
+          onChange={(e) => setSession({ transcript: e.target.value, transcriptSource: null })}
           className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm resize-none min-h-[100px] outline-none focus:ring-2 focus:ring-indigo-400"
           placeholder="Your transcript will appear here…"
         />

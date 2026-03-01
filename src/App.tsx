@@ -57,6 +57,23 @@ export default function App() {
   const [summarizeReady, setSummarizeReady] = useState(false)
   const [shadowingReady, setShadowingReady] = useState(false)
 
+  const setSession = useSettingsStore((s) => s.setSession)
+
+  /** After Azure assess, backfill transcript from pronunciation words if still empty */
+  const backfillTranscriptFromAzure = useCallback(() => {
+    const { session } = useSettingsStore.getState()
+    if (session.transcript.trim() || !session.pronunciationResult?.words.length) return
+
+    const azureTranscript = session.pronunciationResult.words
+      .filter((w) => w.errorType !== 'Insertion')
+      .map((w) => w.word)
+      .join(' ')
+
+    if (azureTranscript) {
+      setSession({ transcript: azureTranscript, transcriptSource: 'azure' })
+    }
+  }, [setSession])
+
   const handleRecordingComplete = useCallback(async () => {
     const { session, currentModeId: modeId } = useSettingsStore.getState()
     if (!session.recordingBlob) return
@@ -71,14 +88,17 @@ export default function App() {
       // Other modes: use transcript if available, unscripted if not
       await assess(session.recordingBlob, session.transcript || undefined)
     }
-  }, [assess])
+
+    backfillTranscriptFromAzure()
+  }, [assess, backfillTranscriptFromAzure])
 
   const handleDebateComplete = useCallback(async () => {
     const { session } = useSettingsStore.getState()
     if (!session.recordingBlob) return
     // Use transcript if available, unscripted if not
     await assess(session.recordingBlob, session.transcript || undefined)
-  }, [assess])
+    backfillTranscriptFromAzure()
+  }, [assess, backfillTranscriptFromAzure])
 
   const currentMode = getModeById(currentModeId)
   const enabledModes = ALL_MODES.filter((m) => m.enabled)
