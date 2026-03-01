@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSettingsStore, DEFAULT_SPEAKING_GUIDE } from '../../stores/settingsStore'
+import { useSettingsStore, DEFAULT_SPEAKING_GUIDES } from '../../stores/settingsStore'
 import type { STTEngine, TTSEngine, AIProvider, GeminiModel } from '../../stores/settingsStore'
 import { ALL_MODES, getModeById } from '../../modes'
 
@@ -365,37 +365,74 @@ export function Settings() {
         />
       </section>
 
-      {/* Speaking Guide Template */}
+      {/* Per-Mode Speaking Guides */}
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Speaking Guide Template
+            Speaking Guides (Per-Mode)
           </h3>
           <button
-            onClick={store.resetSpeakingGuide}
+            onClick={store.resetAllSpeakingGuides}
             className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors"
           >
-            Reset to default
+            Reset all to default
           </button>
         </div>
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          Shown as a collapsible "💡 Speaking Guide" panel on the Practice page. Supports Markdown.
+          Each mode has its own speaking guide shown as a collapsible panel on the Practice page. Supports Markdown.
         </p>
-        <textarea
-          value={store.speakingGuide}
-          onChange={(e) => store.setSpeakingGuide(e.target.value)}
-          rows={12}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white resize-y outline-none focus:ring-2 focus:ring-indigo-400 font-mono"
-        />
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          Default template:{' '}
-          <button
-            onClick={() => store.setSpeakingGuide(DEFAULT_SPEAKING_GUIDE)}
-            className="text-indigo-500 hover:underline"
-          >
-            DLASS framework
-          </button>
-        </p>
+
+        <div className="flex gap-2 flex-wrap">
+          {ALL_MODES.filter((m) => m.enabled).map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => setSelectedModeId(mode.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                selectedModeId === mode.id
+                  ? 'bg-amber-600 border-amber-600 text-white'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-amber-400'
+              }`}
+            >
+              <span>{mode.icon}</span>
+              <span>{mode.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {(() => {
+          const customGuide = store.speakingGuides[selectedModeId] ?? ''
+          const defaultGuide = DEFAULT_SPEAKING_GUIDES[selectedModeId] ?? ''
+          const effectiveGuide = customGuide || defaultGuide
+          return (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedMode.icon} {selectedMode.name}
+                  {customGuide ? (
+                    <span className="ml-2 text-xs text-green-500">(custom)</span>
+                  ) : (
+                    <span className="ml-2 text-xs text-gray-400">(default)</span>
+                  )}
+                </span>
+                <button
+                  onClick={() => store.resetSpeakingGuide(selectedModeId)}
+                  disabled={!customGuide}
+                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors disabled:opacity-50"
+                >
+                  Reset to default
+                </button>
+              </div>
+
+              <textarea
+                value={customGuide}
+                onChange={(e) => store.setSpeakingGuide(selectedModeId, e.target.value)}
+                placeholder={effectiveGuide}
+                rows={12}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white resize-y outline-none focus:ring-2 focus:ring-amber-400 font-mono placeholder:text-gray-300 dark:placeholder:text-gray-600"
+              />
+            </>
+          )
+        })()}
       </section>
 
       {/* Dark Mode */}

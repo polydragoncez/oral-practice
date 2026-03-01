@@ -157,25 +157,27 @@ export default function App() {
                 return (
                   <section key={step.id} className="flex flex-col gap-3">
                     {content}
-                    {step.type === 'display-image' && <SpeakingGuide />}
+                    <SpeakingGuide modeId={currentModeId} />
                   </section>
                 )
               })}
 
             {/* Passage Prompt (summarize mode) */}
             {hasPassageStep && (
-              <section>
+              <section className="flex flex-col gap-3">
                 <PassagePrompt
                   onReady={() => setSummarizeReady(true)}
                   isRecording={summarizeReady}
                 />
+                <SpeakingGuide modeId={currentModeId} />
               </section>
             )}
 
             {/* Debate Flow (self-contained with its own recording) */}
             {hasDebateStep && (
-              <section>
+              <section className="flex flex-col gap-3">
                 <DebateFlow onRecordingComplete={handleDebateComplete} />
+                <SpeakingGuide modeId={currentModeId} />
               </section>
             )}
 

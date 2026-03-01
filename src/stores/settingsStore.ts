@@ -30,7 +30,8 @@ Use this exact format:
 
 **Overall Score**: X/10`
 
-const DEFAULT_SPEAKING_GUIDE = `🎯 **Speaking Framework: DLASS**
+const DEFAULT_SPEAKING_GUIDES: Record<string, string> = {
+  'image-describe': `🎯 **Speaking Framework: DLASS**
 
 **1. 📸 Describe** — What do you see?
 > "In this picture, I can see..."
@@ -38,12 +39,13 @@ const DEFAULT_SPEAKING_GUIDE = `🎯 **Speaking Framework: DLASS**
 
 **2. 📍 Locate** — Where are things?
 > "In the foreground/background..."
-> "On the left/right..."
+> "On the left/right side..."
 > "In the center of the image..."
 
 **3. 🎬 Action** — What's happening?
 > "The person seems to be..."
 > "It looks like they are..."
+> "...appears to be taking place"
 
 **4. 💭 Speculate** — Why? What's the story?
 > "It might be because..."
@@ -53,7 +55,108 @@ const DEFAULT_SPEAKING_GUIDE = `🎯 **Speaking Framework: DLASS**
 **5. 🗣️ Share** — Your reaction & connection
 > "What strikes me is..."
 > "This reminds me of..."
-> "I think/feel that..."`
+> "I think/feel that..."
+
+💡 **Tips:**
+- Use present continuous for actions: "is walking", "are sitting"
+- Use spatial prepositions: beside, between, among, near
+- Don't just list — connect your observations into a narrative`,
+
+  'pro-con-debate': `🎯 **Debate Framework: PEE (Point-Evidence-Explain)**
+
+For EACH side (Pro & Con), structure your argument:
+
+**1. 📌 Point** — State your position clearly
+> "I believe that... because..."
+> "The main argument for/against this is..."
+> "My position is that..."
+
+**2. 📊 Evidence** — Support with reasons or examples
+> "For example,..."
+> "Studies have shown that..."
+> "We can see this in everyday life when..."
+> "A clear example of this is..."
+
+**3. 💡 Explain** — Connect evidence to your point
+> "This means that..."
+> "This is important because..."
+> "As a result,..."
+> "Therefore, we can conclude that..."
+
+🔄 **Transition phrases** (when switching sides):
+> "On the other hand,..."
+> "However, looking at the other side,..."
+> "Conversely,..."
+> "While that may be true, we must also consider..."
+> "Nevertheless,..."
+
+💡 **Tips:**
+- Start strong — your first sentence should clearly state your stance
+- Use discourse markers: firstly, moreover, furthermore, in addition
+- Acknowledge the opposing view before countering it
+- Keep each side balanced in length and depth
+- Don't just list points — explain WHY each point matters`,
+
+  'random-question': `🎯 **Speaking Framework: PREP**
+
+**1. 📌 Point** — Answer the question directly
+> "I think/believe that..."
+> "In my opinion,..."
+> "If I could..., I would..."
+
+**2. 💭 Reason** — Explain why
+> "The reason is..."
+> "This is because..."
+> "I feel this way because..."
+
+**3. 📖 Example** — Give a specific example
+> "For instance,..."
+> "I remember a time when..."
+> "A good example would be..."
+> "In my experience,..."
+
+**4. 🎯 Point** — Wrap up by restating your answer
+> "So that's why I believe..."
+> "In conclusion,..."
+> "All things considered,..."
+
+💡 **Tips:**
+- Don't panic — take a breath before speaking
+- It's OK to think aloud: "That's an interesting question, let me think..."
+- Use fillers naturally: "well", "you know", "I mean"
+- Be specific — vague answers are less engaging
+- Personal stories make your answer memorable`,
+
+  'summarize': `🎯 **Summarize Framework: MKCO**
+
+**1. 📌 Main Idea** — What is the passage mainly about?
+> "This passage is about..."
+> "The article mainly discusses..."
+> "The author's main point is..."
+
+**2. 🔑 Key Points** — What are the important details?
+> "The author mentions that..."
+> "One key point is..."
+> "According to the passage..."
+> "The text highlights..."
+
+**3. 🔗 Connect** — How do the ideas relate?
+> "This is because..."
+> "As a result..."
+> "In other words..."
+> "This leads to..."
+
+**4. 🎁 Own Words** — Rephrase, don't repeat!
+> ✅ "The writer argues that working from home boosts efficiency"
+> ❌ "Remote work increases productivity" (too close to original)
+
+💡 **Tips:**
+- Aim for 30-50% of the original length
+- Don't add your own opinion — just report what the text says
+- Use reporting verbs: states, explains, argues, suggests, highlights, emphasizes
+- Start with the big picture, then add supporting details
+- Skip minor details — focus on what matters most`,
+}
 
 export type STTEngine = 'webSpeech' | 'whisper'
 export type TTSEngine = 'browser' | 'openai' | 'azure'
@@ -91,7 +194,7 @@ interface SettingsState {
   defaultDuration: number
   dailyGoal: number
   systemPrompt: string
-  speakingGuide: string
+  speakingGuides: Record<string, string>
   darkMode: boolean
   currentModeId: string
   modePrompts: Record<string, string>
@@ -115,8 +218,9 @@ interface SettingsState {
   setDailyGoal: (m: number) => void
   setSystemPrompt: (p: string) => void
   resetSystemPrompt: () => void
-  setSpeakingGuide: (g: string) => void
-  resetSpeakingGuide: () => void
+  setSpeakingGuide: (modeId: string, guide: string) => void
+  resetSpeakingGuide: (modeId: string) => void
+  resetAllSpeakingGuides: () => void
   setDarkMode: (v: boolean) => void
   setCurrentModeId: (id: string) => void
   setModePrompt: (modeId: string, prompt: string) => void
@@ -154,7 +258,7 @@ export const useSettingsStore = create<SettingsState>()(
       defaultDuration: 60,
       dailyGoal: 10,
       systemPrompt: DEFAULT_SYSTEM_PROMPT,
-      speakingGuide: DEFAULT_SPEAKING_GUIDE,
+      speakingGuides: {},
       darkMode: false,
       currentModeId: 'image-describe',
       modePrompts: {},
@@ -175,8 +279,14 @@ export const useSettingsStore = create<SettingsState>()(
       setDailyGoal: (m) => set({ dailyGoal: m }),
       setSystemPrompt: (p) => set({ systemPrompt: p }),
       resetSystemPrompt: () => set({ systemPrompt: DEFAULT_SYSTEM_PROMPT }),
-      setSpeakingGuide: (g) => set({ speakingGuide: g }),
-      resetSpeakingGuide: () => set({ speakingGuide: DEFAULT_SPEAKING_GUIDE }),
+      setSpeakingGuide: (modeId, guide) =>
+        set((state) => ({ speakingGuides: { ...state.speakingGuides, [modeId]: guide } })),
+      resetSpeakingGuide: (modeId) =>
+        set((state) => {
+          const { [modeId]: _, ...rest } = state.speakingGuides
+          return { speakingGuides: rest }
+        }),
+      resetAllSpeakingGuides: () => set({ speakingGuides: {} }),
       setDarkMode: (v) => set({ darkMode: v }),
       setCurrentModeId: (id) => set({ currentModeId: id }),
       setModePrompt: (modeId, prompt) =>
@@ -193,7 +303,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'oral-practice-settings',
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown) => {
         // always reset systemPrompt to current default on version bump
         return { ...(persisted as object), systemPrompt: DEFAULT_SYSTEM_PROMPT }
@@ -212,7 +322,7 @@ export const useSettingsStore = create<SettingsState>()(
         defaultDuration: state.defaultDuration,
         dailyGoal: state.dailyGoal,
         systemPrompt: state.systemPrompt,
-        speakingGuide: state.speakingGuide,
+        speakingGuides: state.speakingGuides,
         darkMode: state.darkMode,
         currentModeId: state.currentModeId,
         modePrompts: state.modePrompts,
@@ -222,4 +332,4 @@ export const useSettingsStore = create<SettingsState>()(
   )
 )
 
-export { DEFAULT_SYSTEM_PROMPT, DEFAULT_SPEAKING_GUIDE }
+export { DEFAULT_SYSTEM_PROMPT, DEFAULT_SPEAKING_GUIDES }
