@@ -3,11 +3,17 @@ export interface WordProsodyFeedback {
   intonationErrors?: string[]  // e.g. ['Monotone']
 }
 
+export interface PhonemeResult {
+  phoneme: string
+  accuracyScore: number
+}
+
 export interface WordResult {
   word: string
   accuracyScore: number
   errorType: string            // None | Omission | Insertion | Mispronunciation
   prosodyFeedback?: WordProsodyFeedback
+  phonemes?: PhonemeResult[]
 }
 
 export interface PronunciationResult {

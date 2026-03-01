@@ -235,6 +235,29 @@ export function History() {
                   </div>
                 )}
 
+                {/* Shadowing text and source */}
+                {s.shadowingText && (
+                  <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase">
+                        Reference Text
+                      </span>
+                      {s.shadowingSource && (() => {
+                        const srcMode = getModeById(s.shadowingSource.modeId)
+                        const ver = s.shadowingSource.version === 'corrected' ? 'Corrected' : 'Reference'
+                        return (
+                          <span className="text-xs text-violet-500 dark:text-violet-400">
+                            from {srcMode.icon} {srcMode.name} — {ver}
+                          </span>
+                        )
+                      })()}
+                    </div>
+                    <p className="text-sm text-violet-800 dark:text-violet-200 leading-relaxed">
+                      {s.shadowingText}
+                    </p>
+                  </div>
+                )}
+
                 {/* Regular transcript (shown for non-debate sessions or when no debate metadata) */}
                 {s.transcript && !meta.debateTopic && (
                   <div>

@@ -25,7 +25,7 @@ export interface AIPayload {
 
 export interface PracticeModeStep {
   id: string
-  type: 'display-image' | 'display-text' | 'display-question' | 'display-debate-topic' | 'display-passage' | 'record' | 'transition-prompt'
+  type: 'display-image' | 'display-text' | 'display-question' | 'display-debate-topic' | 'display-passage' | 'display-shadowing-text' | 'record' | 'transition-prompt'
   duration?: number
   config?: Record<string, unknown>
 }

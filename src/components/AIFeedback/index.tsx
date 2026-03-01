@@ -146,6 +146,7 @@ function ModelResponseCard({
   voices,
   selectedVoice,
   setSelectedVoice,
+  onShadowing,
 }: {
   type: 'corrected' | 'reference'
   text: string
@@ -161,6 +162,7 @@ function ModelResponseCard({
   voices: { name: string; label: string }[]
   selectedVoice: string
   setSelectedVoice: (v: string) => void
+  onShadowing?: () => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -253,6 +255,14 @@ function ModelResponseCard({
                 ))}
               </select>
             )}
+            {onShadowing && (
+              <button
+                onClick={onShadowing}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border ${btnBorderClass} rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
+              >
+                🗣️ Read Aloud ➜
+              </button>
+            )}
           </div>
         </>
       )}
@@ -262,12 +272,14 @@ function ModelResponseCard({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function AIFeedback() {
-  const { session, aiProvider, currentModeId } = useSettingsStore(
+export function AIFeedback({ onNavigateToShadowing }: { onNavigateToShadowing?: () => void } = {}) {
+  const { session, aiProvider, currentModeId, setShadowingText, setCurrentModeId } = useSettingsStore(
     useShallow((s) => ({
       session: s.session,
       aiProvider: s.aiProvider,
       currentModeId: s.currentModeId,
+      setShadowingText: s.setShadowingText,
+      setCurrentModeId: s.setCurrentModeId,
     }))
   )
   const { loading, error, saved, getFeedback } = useAIFeedback()
@@ -287,6 +299,13 @@ export function AIFeedback() {
     : { corrected: null, reference: null }
 
   const score = session.aiFeedback ? extractScore(session.aiFeedback) : null
+
+  const isShadowing = currentModeId === 'shadowing'
+  const handleShadowing = useCallback((text: string, version: 'corrected' | 'reference') => {
+    setShadowingText(text, { modeId: currentModeId, version })
+    setCurrentModeId('shadowing')
+    onNavigateToShadowing?.()
+  }, [setShadowingText, setCurrentModeId, currentModeId, onNavigateToShadowing])
 
   return (
     <div className="flex flex-col gap-3">
@@ -355,6 +374,7 @@ export function AIFeedback() {
                   voices={voices}
                   selectedVoice={selectedVoice}
                   setSelectedVoice={setSelectedVoice}
+                  onShadowing={!isShadowing ? () => handleShadowing(responses.corrected!, 'corrected') : undefined}
                 />
               )}
 
@@ -375,6 +395,7 @@ export function AIFeedback() {
                   voices={voices}
                   selectedVoice={selectedVoice}
                   setSelectedVoice={setSelectedVoice}
+                  onShadowing={!isShadowing ? () => handleShadowing(responses.reference!, 'reference') : undefined}
                 />
               )}
             </div>

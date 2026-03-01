@@ -129,6 +129,20 @@ For EACH side (Pro & Con), structure your argument:
 - Be specific — vague answers are less engaging
 - Personal stories make your answer memorable`,
 
+  'shadowing': `🎯 **Read Aloud Tips**
+
+**1. 👂 Listen First** — Play the audio at least once before recording
+**2. 🐢 Start Slow** — It's better to be clear than fast
+**3. 🔗 Link Words** — Connect words naturally: "an apple" → "a·napple"
+**4. 📈 Stress Key Words** — Emphasize nouns, verbs, adjectives
+**5. ⏸️ Pause at Punctuation** — Commas = short pause, periods = longer pause
+
+💡 **Focus on:**
+- Difficult sounds: th /θ/, r /ɹ/, l /l/, v /v/
+- Word stress: phOtograph vs photoGraphic
+- Sentence rhythm: stress content words, reduce function words
+- Intonation: voice goes up for questions, down for statements`,
+
   'summarize': `🎯 **Summarize Framework: MKCO**
 
 **1. 📌 Main Idea** — What is the passage mainly about?
@@ -203,6 +217,10 @@ interface SettingsState {
   thinkTime: number
   azureTtsVoice: string
 
+  // Shadowing cross-mode (not persisted)
+  shadowingText: string | null
+  shadowingSource: { modeId: string; version: string } | null
+
   // Current session (not persisted)
   session: Session
 
@@ -230,6 +248,8 @@ interface SettingsState {
   resetModePrompt: (modeId: string) => void
   setThinkTime: (t: number) => void
   setAzureTtsVoice: (v: string) => void
+  setShadowingText: (text: string, source?: { modeId: string; version: string }) => void
+  clearShadowingText: () => void
   setSession: (partial: Partial<Session>) => void
   resetSession: () => void
 }
@@ -268,6 +288,8 @@ export const useSettingsStore = create<SettingsState>()(
       modePrompts: {},
       thinkTime: 5,
       azureTtsVoice: 'en-US-JennyNeural',
+      shadowingText: null,
+      shadowingSource: null,
       session: defaultSession,
 
       setUnsplashKey: (key) => set({ unsplashKey: key }),
@@ -303,6 +325,10 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       setThinkTime: (t) => set({ thinkTime: t }),
       setAzureTtsVoice: (v) => set({ azureTtsVoice: v }),
+      setShadowingText: (text, source) =>
+        set({ shadowingText: text, shadowingSource: source ?? null }),
+      clearShadowingText: () =>
+        set({ shadowingText: null, shadowingSource: null }),
       setSession: (partial) =>
         set((state) => ({ session: { ...state.session, ...partial } })),
       resetSession: () => set({ session: defaultSession }),

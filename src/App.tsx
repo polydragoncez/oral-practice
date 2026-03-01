@@ -13,6 +13,8 @@ import { SpeakingGuide } from './components/SpeakingGuide'
 import { QuestionPrompt } from './components/QuestionPrompt'
 import { DebateFlow } from './components/DebateFlow'
 import { PassagePrompt } from './components/PassagePrompt'
+import { ShadowingPrompt } from './components/ShadowingPrompt'
+import { ShadowingResult } from './components/ShadowingResult'
 import { WelcomeModal } from './components/WelcomeModal'
 import { About } from './components/About'
 import { InstallPrompt } from './components/InstallPrompt'
@@ -45,18 +47,25 @@ export default function App() {
       setCurrentModeId: s.setCurrentModeId,
     }))
   )
-  const { assess, result: pronunciationResult, isAssessing, error: pronunciationError } = useAzurePronunciation()
+  const { assess, result: pronunciationResult, isAssessing, error: pronunciationError, azureAvailable } = useAzurePronunciation()
 
   const [tab, setTab] = useState<Tab>('practice')
   const [transcriptOpen, setTranscriptOpen] = useState(true)
   const [pronunciationOpen, setPronunciationOpen] = useState(true)
   const [feedbackOpen, setFeedbackOpen] = useState(true)
   const [summarizeReady, setSummarizeReady] = useState(false)
+  const [shadowingReady, setShadowingReady] = useState(false)
 
   const handleRecordingComplete = useCallback(async () => {
-    const { session } = useSettingsStore.getState()
+    const { session, currentModeId: modeId } = useSettingsStore.getState()
     if (session.recordingBlob && session.transcript.trim()) {
-      await assess(session.recordingBlob, session.transcript)
+      // Shadowing mode: use phoneme granularity with the reference text
+      if (modeId === 'shadowing') {
+        const refText = (session.modeState?.shadowingText as string) || session.transcript
+        await assess(session.recordingBlob, refText, { granularity: 'Phoneme' })
+      } else {
+        await assess(session.recordingBlob, session.transcript)
+      }
     }
   }, [assess])
 
@@ -72,10 +81,12 @@ export default function App() {
   const hasRecordStep = currentMode.steps.some((s) => s.type === 'record')
   const hasDebateStep = currentMode.steps.some((s) => s.type === 'display-debate-topic')
   const hasPassageStep = currentMode.steps.some((s) => s.type === 'display-passage')
+  const hasShadowingStep = currentMode.steps.some((s) => s.type === 'display-shadowing-text')
 
-  // Reset summarizeReady when mode changes
+  // Reset state when mode changes
   useEffect(() => {
     setSummarizeReady(false)
+    setShadowingReady(false)
   }, [currentModeId])
 
   // Apply dark mode class on <html>
@@ -155,9 +166,9 @@ export default function App() {
               </div>
             )}
 
-            {/* Dynamic step rendering — non-record, non-debate, non-passage steps */}
+            {/* Dynamic step rendering — non-record, non-debate, non-passage, non-shadowing steps */}
             {currentMode.steps
-              .filter((s) => s.type !== 'record' && s.type !== 'display-debate-topic' && s.type !== 'display-passage')
+              .filter((s) => s.type !== 'record' && s.type !== 'display-debate-topic' && s.type !== 'display-passage' && s.type !== 'display-shadowing-text')
               .map((step) => {
                 const content = renderStepContent(step)
                 if (!content) return null
@@ -188,8 +199,21 @@ export default function App() {
               </section>
             )}
 
-            {/* Recorder — only if mode declares a 'record' step (and for passage modes, only after user is ready) */}
-            {hasRecordStep && (!hasPassageStep || summarizeReady) && (
+            {/* Shadowing / Read Aloud */}
+            {hasShadowingStep && (
+              <section className="flex flex-col gap-3">
+                <ShadowingPrompt onReady={() => setShadowingReady(true)} />
+                {!azureAvailable && !shadowingReady && (
+                  <div className="px-4 py-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-sm text-blue-700 dark:text-blue-300">
+                    📌 Add an Azure Speech key in Settings to unlock detailed word-by-word pronunciation scoring for this mode.
+                  </div>
+                )}
+                <SpeakingGuide modeId={currentModeId} />
+              </section>
+            )}
+
+            {/* Recorder — only if mode declares a 'record' step (and for passage/shadowing modes, only after user is ready) */}
+            {hasRecordStep && (!hasPassageStep || summarizeReady) && (!hasShadowingStep || shadowingReady) && (
               <section className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4">
                 <Recorder onRecordingComplete={handleRecordingComplete} />
               </section>
@@ -211,8 +235,39 @@ export default function App() {
               )}
             </section>
 
-            {/* Pronunciation Assessment (visible only when Azure key is set and recording done) */}
-            {(isAssessing || pronunciationResult) && (
+            {/* Shadowing Result (shadowing mode only — detailed word-by-word) */}
+            {hasShadowingStep && (isAssessing || pronunciationResult) && (
+              <section>
+                {isAssessing ? (
+                  <div className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4">
+                    <div className="flex items-center justify-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 py-4">
+                      <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      Assessing pronunciation…
+                    </div>
+                  </div>
+                ) : pronunciationResult ? (
+                  <ShadowingResult
+                    result={pronunciationResult}
+                    onTryAgain={() => setShadowingReady(true)}
+                    onListenAgain={() => {
+                      const text = (useSettingsStore.getState().session.modeState?.shadowingText as string) || ''
+                      if (text) {
+                        const u = new SpeechSynthesisUtterance(text)
+                        u.lang = 'en-US'
+                        speechSynthesis.cancel()
+                        speechSynthesis.speak(u)
+                      }
+                    }}
+                  />
+                ) : null}
+                {pronunciationError && (
+                  <p className="text-sm text-red-500 dark:text-red-400 mt-2">{pronunciationError}</p>
+                )}
+              </section>
+            )}
+
+            {/* Pronunciation Assessment (non-shadowing modes) */}
+            {!hasShadowingStep && (isAssessing || pronunciationResult) && (
               <section className="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4">
                 <div
                   className="flex items-center justify-between cursor-pointer"
@@ -257,7 +312,7 @@ export default function App() {
               </div>
               {feedbackOpen && (
                 <div className="mt-3">
-                  <AIFeedback />
+                  <AIFeedback onNavigateToShadowing={() => setTab('practice')} />
                 </div>
               )}
             </section>

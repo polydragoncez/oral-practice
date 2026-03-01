@@ -1,5 +1,5 @@
 import { convertBlobToWav } from '../utils/audioConverter'
-import type { PronunciationResult, WordResult, WordProsodyFeedback } from '../types/pronunciation'
+import type { PronunciationResult, WordResult, WordProsodyFeedback, PhonemeResult } from '../types/pronunciation'
 
 // ─── Azure Neural TTS voices ──────────────────────────────────────────────────
 
@@ -46,11 +46,17 @@ export async function generateAzureTTS(
   return response.blob()
 }
 
+interface AzurePhoneme {
+  Phoneme: string
+  AccuracyScore?: number
+}
+
 interface AzureWord {
   Word: string
   // Scores are flat on the word object (not nested under PronunciationAssessment)
   AccuracyScore?: number
   ErrorType?: string
+  Phonemes?: AzurePhoneme[]
   Feedback?: {
     Prosody?: {
       Break?: { ErrorTypes?: string[] }
@@ -78,16 +84,19 @@ export async function assessPronunciation(
   azureKey: string,
   azureRegion: string,
   audioBlob: Blob,
-  referenceText: string
+  referenceText: string,
+  options?: { granularity?: 'Word' | 'Phoneme' }
 ): Promise<PronunciationResult> {
   // Convert to WAV PCM 16kHz mono (required by Azure REST API)
   const wavBlob = await convertBlobToWav(audioBlob)
+
+  const granularity = options?.granularity ?? 'Word'
 
   // Build Pronunciation Assessment config
   const assessmentConfig = {
     ReferenceText: referenceText,
     GradingSystem: 'HundredMark',
-    Granularity: 'Word',
+    Granularity: granularity,
     Dimension: 'Comprehensive',
     EnableMiscue: true,
     EnableProsodyAssessment: true,
@@ -138,11 +147,20 @@ export async function assessPronunciation(
       }
     }
 
+    let phonemes: PhonemeResult[] | undefined
+    if (w.Phonemes && w.Phonemes.length > 0) {
+      phonemes = w.Phonemes.map((p) => ({
+        phoneme: p.Phoneme,
+        accuracyScore: p.AccuracyScore ?? 0,
+      }))
+    }
+
     return {
       word: w.Word,
       accuracyScore: w.AccuracyScore ?? 0,
       errorType: w.ErrorType ?? 'None',
       ...(prosodyFeedback ? { prosodyFeedback } : {}),
+      ...(phonemes ? { phonemes } : {}),
     }
   })
 

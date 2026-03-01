@@ -16,6 +16,8 @@ export interface SessionRecord {
   pronunciationResult?: PronunciationResult | null
   modeId?: string
   metadata?: Record<string, unknown>
+  shadowingText?: string
+  shadowingSource?: { modeId: string; version: string }
 }
 
 interface OralDB extends DBSchema {

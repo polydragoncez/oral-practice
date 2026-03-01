@@ -4,10 +4,11 @@ import { assessPronunciation } from '../services/azureSpeech'
 import type { PronunciationResult } from '../types/pronunciation'
 
 export interface UseAzurePronunciationReturn {
-  assess: (audioBlob: Blob, transcript: string) => Promise<void>
+  assess: (audioBlob: Blob, transcript: string, options?: { granularity?: 'Word' | 'Phoneme' }) => Promise<void>
   result: PronunciationResult | null
   isAssessing: boolean
   error: string | null
+  azureAvailable: boolean
 }
 
 export function useAzurePronunciation(): UseAzurePronunciationReturn {
@@ -19,8 +20,10 @@ export function useAzurePronunciation(): UseAzurePronunciationReturn {
   const azureSpeechRegion = useSettingsStore((s) => s.azureSpeechRegion)
   const setSession = useSettingsStore((s) => s.setSession)
 
+  const azureAvailable = !!(azureSpeechKey && azureSpeechRegion)
+
   const assess = useCallback(
-    async (audioBlob: Blob, transcript: string) => {
+    async (audioBlob: Blob, transcript: string, options?: { granularity?: 'Word' | 'Phoneme' }) => {
       if (!azureSpeechKey) return
       if (!transcript.trim()) return
 
@@ -34,7 +37,8 @@ export function useAzurePronunciation(): UseAzurePronunciationReturn {
           azureSpeechKey,
           azureSpeechRegion,
           audioBlob,
-          transcript
+          transcript,
+          options
         )
         setResult(pronunciationResult)
         setSession({ pronunciationResult })
@@ -47,5 +51,5 @@ export function useAzurePronunciation(): UseAzurePronunciationReturn {
     [azureSpeechKey, azureSpeechRegion, setSession]
   )
 
-  return { assess, result, isAssessing, error }
+  return { assess, result, isAssessing, error, azureAvailable }
 }

@@ -140,6 +140,7 @@ export function useAIFeedback() {
       setSaved(false)
       try {
         const isRemote = session.currentImage?.startsWith('http')
+        const { shadowingText, shadowingSource } = useSettingsStore.getState()
         await saveSession({
           timestamp: Date.now(),
           imageUrl: session.currentImage ?? '',
@@ -153,6 +154,10 @@ export function useAIFeedback() {
           pronunciationResult: session.pronunciationResult ?? undefined,
           modeId: currentModeId,
           metadata: session.modeState,
+          ...(currentModeId === 'shadowing' && shadowingText ? {
+            shadowingText,
+            shadowingSource: shadowingSource ?? undefined,
+          } : {}),
         })
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
