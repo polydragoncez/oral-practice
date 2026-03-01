@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSettingsStore, DEFAULT_SPEAKING_GUIDES } from '../../stores/settingsStore'
+import { useSettingsStore, DEFAULT_SPEAKING_GUIDES, DEFAULT_CHEAT_SHEETS } from '../../stores/settingsStore'
 import type { STTEngine, TTSEngine, AIProvider, GeminiModel } from '../../stores/settingsStore'
 import { ALL_MODES, getModeById } from '../../modes'
 import { AZURE_TTS_VOICES } from '../../services/azureSpeech'
@@ -411,21 +411,21 @@ export function Settings() {
         />
       </section>
 
-      {/* Per-Mode Speaking Guides */}
+      {/* Per-Mode Cheat Sheets & Speaking Guides */}
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Speaking Guides (Per-Mode)
+            Cheat Sheets & Speaking Guides (Per-Mode)
           </h3>
           <button
-            onClick={store.resetAllSpeakingGuides}
+            onClick={() => { store.resetAllCheatSheets(); store.resetAllSpeakingGuides() }}
             className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors"
           >
             Reset all to default
           </button>
         </div>
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          Each mode has its own speaking guide shown as a collapsible panel on the Practice page. Supports Markdown.
+          Each mode has a concise cheat sheet and a detailed speaking guide, shown as tabs on the Practice page. Supports Markdown.
         </p>
 
         <div className="flex gap-2 flex-wrap">
@@ -446,14 +446,42 @@ export function Settings() {
         </div>
 
         {(() => {
+          const customCheat = store.cheatSheets[selectedModeId] ?? ''
+          const defaultCheat = DEFAULT_CHEAT_SHEETS[selectedModeId] ?? ''
           const customGuide = store.speakingGuides[selectedModeId] ?? ''
           const defaultGuide = DEFAULT_SPEAKING_GUIDES[selectedModeId] ?? ''
-          const effectiveGuide = customGuide || defaultGuide
           return (
             <>
-              <div className="flex items-center justify-between">
+              {/* Cheat Sheet */}
+              <div className="flex items-center justify-between mt-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {selectedMode.icon} {selectedMode.name}
+                  📋 Cheat Sheet — {selectedMode.icon} {selectedMode.name}
+                  {customCheat ? (
+                    <span className="ml-2 text-xs text-green-500">(custom)</span>
+                  ) : (
+                    <span className="ml-2 text-xs text-gray-400">(default)</span>
+                  )}
+                </span>
+                <button
+                  onClick={() => store.resetCheatSheet(selectedModeId)}
+                  disabled={!customCheat}
+                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded transition-colors disabled:opacity-50"
+                >
+                  Reset to default
+                </button>
+              </div>
+              <textarea
+                value={customCheat}
+                onChange={(e) => store.setCheatSheet(selectedModeId, e.target.value)}
+                placeholder={defaultCheat}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white resize-y outline-none focus:ring-2 focus:ring-amber-400 font-mono placeholder:text-gray-300 dark:placeholder:text-gray-600"
+              />
+
+              {/* Speaking Guide */}
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  📖 Speaking Guide — {selectedMode.icon} {selectedMode.name}
                   {customGuide ? (
                     <span className="ml-2 text-xs text-green-500">(custom)</span>
                   ) : (
@@ -468,11 +496,10 @@ export function Settings() {
                   Reset to default
                 </button>
               </div>
-
               <textarea
                 value={customGuide}
                 onChange={(e) => store.setSpeakingGuide(selectedModeId, e.target.value)}
-                placeholder={effectiveGuide}
+                placeholder={defaultGuide}
                 rows={12}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white resize-y outline-none focus:ring-2 focus:ring-amber-400 font-mono placeholder:text-gray-300 dark:placeholder:text-gray-600"
               />
