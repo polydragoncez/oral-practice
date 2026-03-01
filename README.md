@@ -1,20 +1,34 @@
-# Oral Practice — English Speaking Practice
+# Oral Speak Practice Feedback
 
 An all-in-one English speaking practice web app. Look at images, answer questions, debate topics, or summarize passages — then get AI-powered feedback on your grammar, vocabulary, fluency, and pronunciation.
+
+## Live Demo
+
+**[speakenglish.cc](https://speakenglish.cc/)**
+
+Try it right now — no sign-up required. You can safely enter your own API keys in Settings; they are stored only in your browser's localStorage and sent directly to the respective provider. Nothing passes through our server.
 
 ## Features
 
 - 📸 **Image Description** — Describe random images with structured guidance (DLASS framework)
-- ⚖️ **Pro/Con Debate** — Argue both sides of a topic to build argumentation skills
-- ❓ **Random Question** — Answer spontaneous questions across various topics and difficulty levels
-- 📝 **Summarize** — Read a passage, then summarize it in your own words
+- ⚖️ **Pro/Con Debate** — Argue both sides of a topic to build argumentation skills (PEE framework)
+- ❓ **Random Question** — Answer spontaneous questions across various topics and difficulty levels (PREP framework)
+- 📝 **Summarize** — Read a passage, then summarize it in your own words (MKCO framework)
 - 🎙️ **Recording** — Built-in recorder with waveform visualization and countdown timer
 - 📊 **Speech Analysis** — Real-time speech-to-text with WPM (words per minute) tracking
 - 🤖 **AI Feedback** — Get detailed corrections and suggestions from Claude, GPT, or Gemini
 - 🔊 **Model Answers** — AI generates improved versions and reads them aloud via TTS
 - 🎯 **Pronunciation Assessment** — Optional Azure Speech integration for prosody, rhythm, and stress analysis
 - 📅 **Practice History** — All sessions saved locally with full playback
+- 📱 **PWA** — Install as an app on mobile or desktop
 - 🌙 **Dark Mode** — Easy on the eyes
+
+## Privacy
+
+- All data (recordings, transcripts, history) is stored **locally in your browser**
+- No account needed, no tracking, no ads
+- API keys are stored in localStorage and sent **only** to their respective provider
+- See the in-app About & Privacy page for full details
 
 ## Tech Stack
 
@@ -23,6 +37,7 @@ An all-in-one English speaking practice web app. Look at images, answer question
 - Zustand (state management)
 - IndexedDB via idb (local storage)
 - Web Speech API (speech recognition + TTS)
+- PWA (service worker + manifest)
 
 ## Getting Started
 
@@ -32,8 +47,8 @@ An all-in-one English speaking practice web app. Look at images, answer question
 
 ### Installation
 ```bash
-git clone https://github.com/YOUR_USERNAME/oral.git
-cd oral
+git clone https://github.com/polydragoncez/oral-practice.git
+cd oral-practice
 npm install
 npm run dev
 ```
@@ -82,14 +97,17 @@ src/
 │   ├── Recorder/           # Recording with waveform
 │   ├── Transcript/         # Speech-to-text display
 │   ├── AIFeedback/         # AI response + TTS
-│   ├── SpeakingGuide/      # DLASS framework guide
+│   ├── SpeakingGuide/      # Per-mode speaking framework guides
 │   ├── DebateFlow/         # Pro/Con debate lifecycle
 │   ├── QuestionPrompt/     # Random question display
 │   ├── PassagePrompt/      # Summarize passage display
 │   ├── PronunciationScore/ # Azure pronunciation results
+│   ├── InstallPrompt/      # PWA install banner
+│   ├── WelcomeModal/       # First-visit onboarding
+│   ├── About/              # About & Privacy page
 │   ├── History/            # Past sessions
 │   ├── Stats/              # Practice statistics
-│   └── Settings/           # API keys, preferences
+│   └── Settings/           # API keys, preferences, privacy
 ├── modes/                  # Practice mode definitions
 │   ├── imageDescribe.ts
 │   ├── proConDebate.ts
