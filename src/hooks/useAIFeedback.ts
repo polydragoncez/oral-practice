@@ -160,7 +160,11 @@ export function useAIFeedback() {
         // save failure is non-fatal — feedback is still shown
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      if (!navigator.onLine) {
+        setError('You\'re offline. AI feedback requires an internet connection.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      }
     } finally {
       setLoading(false)
     }
