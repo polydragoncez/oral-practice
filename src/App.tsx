@@ -19,6 +19,7 @@ import { WelcomeModal } from './components/WelcomeModal'
 import { About } from './components/About'
 import { InstallPrompt } from './components/InstallPrompt'
 import { UpdatePrompt } from './components/UpdatePrompt'
+import { VocabHints } from './components/VocabHints'
 import { useAzurePronunciation } from './hooks/useAzurePronunciation'
 import { ALL_MODES, getModeById } from './modes'
 import type { PracticeModeStep } from './types/practiceMode'
@@ -37,6 +38,18 @@ function renderStepContent(step: PracticeModeStep): React.ReactNode {
     default:
       return null
   }
+}
+
+function VocabHintsSection() {
+  const { currentImageBase64, currentImageMimeType } = useSettingsStore(
+    useShallow((s) => ({
+      currentImageBase64: s.session.currentImageBase64,
+      currentImageMimeType: s.session.currentImageMimeType,
+    }))
+  )
+  return (
+    <VocabHints imageBase64={currentImageBase64} mimeType={currentImageMimeType} />
+  )
 }
 
 export default function App() {
@@ -205,6 +218,11 @@ export default function App() {
                   </section>
                 )
               })}
+
+            {/* Vocabulary Hints (image-describe mode only) */}
+            {currentModeId === 'image-describe' && (
+              <VocabHintsSection />
+            )}
 
             {/* Passage Prompt (summarize mode) */}
             {hasPassageStep && (
