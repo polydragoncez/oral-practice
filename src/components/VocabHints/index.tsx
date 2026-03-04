@@ -83,10 +83,18 @@ export function VocabHints({ imageBase64, mimeType }: VocabHintsProps) {
       return
     }
 
-    const keyMap = { claude: anthropicKey, openai: openaiKey, gemini: geminiKey }
-    const apiKey = keyMap[aiProvider]
-    if (!apiKey) {
-      setError(`${aiProvider === 'claude' ? 'Anthropic' : aiProvider === 'openai' ? 'OpenAI' : 'Gemini'} API key not set in Settings`)
+    // Use configured provider, but fall back to any provider that has a key
+    const providers: Array<{ id: string; key: string }> = [
+      { id: 'claude', key: anthropicKey },
+      { id: 'openai', key: openaiKey },
+      { id: 'gemini', key: geminiKey },
+    ]
+    const preferred = providers.find((p) => p.id === aiProvider && p.key)
+    const fallback = providers.find((p) => p.key)
+    const chosen = preferred || fallback
+
+    if (!chosen) {
+      setError('No AI API key set — add a Gemini, OpenAI, or Anthropic key in Settings')
       return
     }
 
@@ -95,7 +103,7 @@ export function VocabHints({ imageBase64, mimeType }: VocabHintsProps) {
 
     try {
       const serviceReq: AIServiceRequest = {
-        apiKey,
+        apiKey: chosen.key,
         systemPrompt: VOCAB_SYSTEM_PROMPT,
         userMessage: 'Generate vocabulary hints for this image.',
         imageBase64,
@@ -103,9 +111,9 @@ export function VocabHints({ imageBase64, mimeType }: VocabHintsProps) {
       }
 
       let response = ''
-      if (aiProvider === 'claude') {
+      if (chosen.id === 'claude') {
         response = await getClaudeFeedback(serviceReq)
-      } else if (aiProvider === 'openai') {
+      } else if (chosen.id === 'openai') {
         response = await getOpenAIFeedback(serviceReq)
       } else {
         response = await getGeminiFeedback({ ...serviceReq, model: geminiModel })
