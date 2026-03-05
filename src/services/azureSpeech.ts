@@ -303,22 +303,37 @@ export async function assessPronunciation(
   }
 
   // Unscripted mode with long audio — split into chunks for continuous coverage
-  // Send sequentially: Azure free tier (F0) only allows 1 concurrent request
+  // Try all in parallel first; retry any failures sequentially with backoff
+  // (Azure free tier F0 sometimes allows parallel, sometimes 429s)
   const chunks = splitWavIntoChunks(wavBuffer)
-  const results: PronunciationResult[] = []
 
-  for (const chunk of chunks) {
+  const settled = await Promise.allSettled(
+    chunks.map((chunk) => assessChunk(azureKey, azureRegion, chunk, configBase64))
+  )
+
+  const results: (PronunciationResult | null)[] = settled.map((s) =>
+    s.status === 'fulfilled' ? s.value : null
+  )
+
+  // Retry failed chunks sequentially with backoff
+  for (let i = 0; i < results.length; i++) {
+    if (results[i] !== null) continue
+    if (settled[i].status === 'fulfilled') continue // was null (silence) — don't retry
+
+    // This chunk threw (likely 429) — retry after delay
+    await new Promise((r) => setTimeout(r, 1000 + i * 500))
     try {
-      const result = await assessChunk(azureKey, azureRegion, chunk, configBase64)
-      if (result) results.push(result)
+      results[i] = await assessChunk(azureKey, azureRegion, chunks[i], configBase64)
     } catch {
-      // Skip failed chunks (silence, rate limit, etc.) — partial results are still useful
+      // Still failed — skip
     }
   }
 
-  if (results.length === 0) {
+  const successful = results.filter((r): r is PronunciationResult => r !== null)
+
+  if (successful.length === 0) {
     throw new Error('Azure returned no results for any audio segment')
   }
 
-  return mergeResults(results)
+  return mergeResults(successful)
 }
