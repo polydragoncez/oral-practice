@@ -303,15 +303,17 @@ export async function assessPronunciation(
   }
 
   // Unscripted mode with long audio — split into chunks for continuous coverage
+  // Send sequentially: Azure free tier (F0) only allows 1 concurrent request
   const chunks = splitWavIntoChunks(wavBuffer)
-
-  const settled = await Promise.allSettled(
-    chunks.map((chunk) => assessChunk(azureKey, azureRegion, chunk, configBase64))
-  )
-
   const results: PronunciationResult[] = []
-  for (const s of settled) {
-    if (s.status === 'fulfilled' && s.value) results.push(s.value)
+
+  for (const chunk of chunks) {
+    try {
+      const result = await assessChunk(azureKey, azureRegion, chunk, configBase64)
+      if (result) results.push(result)
+    } catch {
+      // Skip failed chunks (silence, rate limit, etc.) — partial results are still useful
+    }
   }
 
   if (results.length === 0) {
